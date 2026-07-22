@@ -128,19 +128,41 @@ export default function TeachersPage() {
     toast.success(wasEditing ? "Data berhasil diperbarui." : "Data baru berhasil ditambahkan.");
   }
 
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback((id: string) => {
+    let isUndone = false;
+    const teacherToRestore = teachers.find(t => t.id === id);
+    if (!teacherToRestore) return;
+
     setTeachers(prev => prev.filter(t => t.id !== id));
-    toast("Data berhasil dihapus.", {
-      action: { label: "Urungkan", onClick: () => fetchTeachers() },
-      duration: 8000,
+
+    toast("Data akan dihapus...", {
+      action: {
+        label: "Urungkan",
+        onClick: () => {
+          isUndone = true;
+          setTeachers(current => {
+            if (current.some(t => t.id === id)) return current;
+            return [...current, teacherToRestore].sort((a, b) => a.name.localeCompare(b.name));
+          });
+          toast.success("Penghapusan dibatalkan.");
+        }
+      },
+      duration: 5000,
     });
-    const res = await fetch("/api/admin/delete-user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: id }),
-    });
-    if (!res.ok) { toast.error("Gagal menghapus data."); fetchTeachers(); }
-  }, []);
+
+    setTimeout(async () => {
+      if (isUndone) return;
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id }),
+      });
+      if (!res.ok) {
+        toast.error("Gagal menghapus data.");
+        fetchTeachers();
+      }
+    }, 5000);
+  }, [teachers]);
 
   function openEdit(teacher: Teacher) { setEditingTeacher(teacher); setForm({ email: teacher.email, name: teacher.name, role: teacher.role, password: "" }); setFormError(""); setDialogOpen(true); }
   function openAdd() { setEditingTeacher(null); setForm({ email: "", name: "", role: "guru", password: "" }); setFormError(""); setDialogOpen(true); }

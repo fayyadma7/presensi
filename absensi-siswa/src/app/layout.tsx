@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`h-full antialiased ${baloo2.variable} ${comicNeue.variable}`}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Toaster position="top-center" richColors />
+        <Toaster position="top-center" richColors expand={true} />
         {children}
       </body>
     </html>

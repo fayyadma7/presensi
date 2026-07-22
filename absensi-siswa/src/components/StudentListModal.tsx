@@ -25,6 +25,7 @@ interface StudentRecord {
   nis: string;
   class_name: string;
   status: string | null;
+  time: string | null;
 }
 
 interface StudentListModalProps {
@@ -82,18 +83,22 @@ export default function StudentListModal({
 
       const [studentRes, attRes] = await Promise.all([
         studentQuery,
-        supabase.from("attendance").select("student_id, masuk_status, late_status").eq("date", date),
+        supabase.from("attendance").select("student_id, masuk_status, late_status, masuk_time").eq("date", date),
       ]);
 
       if (cancelled) return;
 
       const statusMap: Record<string, string | null> = {};
-      attRes.data?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null }) => {
+      const timeMap: Record<string, string | null> = {};
+      attRes.data?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null; masuk_time: string | null }) => {
         if (!a.student_id) return;
         if (a.masuk_status === 'hadir') {
           statusMap[a.student_id] = a.late_status === 'terlambat' ? 'terlambat' : 'hadir';
         } else {
           statusMap[a.student_id] = a.masuk_status;
+        }
+        if (a.masuk_time) {
+          timeMap[a.student_id] = new Date(a.masuk_time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         }
       });
 
@@ -103,6 +108,7 @@ export default function StudentListModal({
         nis: s.nis,
         class_name: s.class?.name || "-",
         status: statusMap[s.id] ?? null,
+        time: timeMap[s.id] ?? null,
       }));
 
       if (status) {
@@ -183,6 +189,7 @@ export default function StudentListModal({
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">NIS</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Kelas</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Waktu</th>
                       <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Status</th>
                     </tr>
                   </thead>
@@ -193,6 +200,7 @@ export default function StudentListModal({
                         <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
                         <td className="px-4 py-3 font-mono text-sm text-foreground">{s.nis}</td>
                         <td className="px-4 py-3 text-sm text-foreground">{s.class_name}</td>
+                        <td className="px-4 py-3 text-center text-sm text-foreground">{s.time || "-"}</td>
                         <td className="px-4 py-3 text-center">{statusBadge(s.status)}</td>
                       </tr>
                     ))}

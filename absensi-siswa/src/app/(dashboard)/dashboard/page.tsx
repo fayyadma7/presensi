@@ -34,6 +34,7 @@ import { isSchoolDay, getPrevSchoolDays, isTodaySchoolDay, formatDateLocal } fro
 import BarcodeScannerModal from "@/components/BarcodeScannerModal";
 import StudentListModal from "@/components/StudentListModal";
 import ScanResultModal from "@/components/ScanResultModal";
+import { SubjectAttendanceModal } from "@/components/SubjectAttendanceModal";
 import { toast } from "sonner";
 
 const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
@@ -343,6 +344,10 @@ export default function DashboardPage() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scannedBarcode, setScannedBarcode] = useState<string | undefined>(undefined);
   const [scanResultOpen, setScanResultOpen] = useState(false);
+  const [dashboardSubjectAttendanceModal, setDashboardSubjectAttendanceModal] = useState<{
+    open: boolean;
+    schedule: any | null;
+  }>({ open: false, schedule: null });
 
   const openScanner = () => {
     setScannedBarcode(undefined);
@@ -399,6 +404,7 @@ const closeScanner = () => {
       class_name: s.teacher_subjects.classes.name,
       teacher_name: s.teacher_subjects.users.name,
       teacher_id: s.teacher_subjects.teacher_id,
+      class_id: s.teacher_subjects.class_id,
       teacher_attendance_status: null,
     }));
 
@@ -470,6 +476,7 @@ const closeScanner = () => {
       { onConflict: "schedule_id,teacher_id,date" }
     );
     if (error) { toast.error("Gagal memperbarui status"); return; }
+    toast.success("Berhasil memperbarui status presensi guru");
     setSubjectTeachers((prev) =>
       prev.map((s) => (s.id === scheduleId ? { ...s, teacher_attendance_status: status } : s))
     );
@@ -1003,24 +1010,25 @@ const closeScanner = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border/50 bg-muted/30">
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase w-12">No</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">No</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Guru</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Mapel</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Kelas</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Jadwal</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Kelas</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Jadwal</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Status Guru</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Waktu Presensi</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-28">Aksi</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Cek Siswa</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedSubjectTeachers.map((s, i) => (
                     <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
-                      <td className="px-4 py-3 font-medium">{s.teacher_name}</td>
-                      <td className="px-4 py-3">{s.subject_name}</td>
-                      <td className="px-4 py-3">{s.class_name}</td>
-                      <td className="px-4 py-3 font-mono text-sm">
+                      <td className="px-4 py-3 text-center text-sm text-muted-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
+                      <td className="px-4 py-3 font-medium text-left">{s.teacher_name}</td>
+                      <td className="px-4 py-3 text-left">{s.subject_name}</td>
+                      <td className="px-4 py-3 text-center">{s.class_name}</td>
+                      <td className="px-4 py-3 text-center font-mono text-sm">
                         {s.start_time?.slice(0, 5)}-{s.end_time?.slice(0, 5)}
                         {s.room ? ` (${s.room})` : ""}
                       </td>
@@ -1047,6 +1055,14 @@ const closeScanner = () => {
                         {s.created_at
                           ? new Date(s.created_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
                           : <span className="text-muted-foreground">-</span>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => setDashboardSubjectAttendanceModal({ open: true, schedule: s })}
+                          className="px-3 py-1.5 text-[11px] font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 clay-transition cursor-pointer inline-flex items-center gap-1"
+                        >
+                          Cek Kehadiran
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-1 justify-center">
@@ -1077,7 +1093,7 @@ const closeScanner = () => {
                   ))}
                   {filteredSubjectTeachers.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <td colSpan={9} className="text-center py-8 text-muted-foreground">
                         {searchTerm ? "Tidak ada guru yang cocok dengan pencarian" : "Tidak ada jadwal pada tanggal ini"}
                       </td>
                     </tr>
@@ -1150,6 +1166,17 @@ const closeScanner = () => {
         onScanNext={() => { setScanResultOpen(false); setScannedBarcode(undefined); setScannerOpen(true); }}
         scannedBarcode={scannedBarcode}
         isHoliday={!todayIsSchoolDay}
+      />
+
+      {/* Subject Attendance Modal */}
+      <SubjectAttendanceModal
+        open={dashboardSubjectAttendanceModal.open}
+        onOpenChange={(open) => {
+          if (!open) setDashboardSubjectAttendanceModal({ open: false, schedule: null });
+        }}
+        schedule={dashboardSubjectAttendanceModal.schedule}
+        currentTeacherName={dashboardSubjectAttendanceModal.schedule?.teacher_name || ""}
+        readOnly={true}
       />
     </div>
     </SkeletonWrapper>

@@ -190,7 +190,7 @@ export default function StudentsPage() {
       if (!res.ok) { setFormError(data.error); toast.error("Gagal menyimpan data siswa."); return; }
       const userId = data.userId;
       const { error: studentError } = await supabase.from("students").insert({
-        id: userId, nis: form.nis, name: form.name, class_id: form.class_id, email,
+        id: userId, nis: form.nis, barcode: form.nis, name: form.name, class_id: form.class_id, email,
       });
       if (studentError) { setFormError(studentError.message); toast.error("Gagal menyimpan data siswa."); return; }
       await supabase.from("users").insert({
@@ -205,19 +205,41 @@ export default function StudentsPage() {
     toast.success(wasEditing ? "Siswa berhasil diperbarui." : "Siswa baru berhasil ditambahkan.");
   }
 
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback((id: string) => {
+    let isUndone = false;
+    const studentToRestore = students.find(s => s.id === id);
+    if (!studentToRestore) return;
+
     setStudents(prev => prev.filter(s => s.id !== id));
-    toast("Siswa berhasil dihapus.", {
-      action: { label: "Urungkan", onClick: () => fetchData() },
-      duration: 8000,
+
+    toast("Siswa akan dihapus...", {
+      action: {
+        label: "Urungkan",
+        onClick: () => {
+          isUndone = true;
+          setStudents(current => {
+            if (current.some(s => s.id === id)) return current;
+            return [...current, studentToRestore].sort((a, b) => a.nis.localeCompare(b.nis));
+          });
+          toast.success("Penghapusan dibatalkan.");
+        }
+      },
+      duration: 5000,
     });
-    const res = await fetch("/api/admin/delete-user", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: id }),
-    });
-    if (!res.ok) { toast.error("Gagal menghapus siswa."); fetchData(); }
-  }, []);
+
+    setTimeout(async () => {
+      if (isUndone) return;
+      const res = await fetch("/api/admin/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: id }),
+      });
+      if (!res.ok) {
+        toast.error("Gagal menghapus siswa.");
+        fetchData();
+      }
+    }, 5000);
+  }, [students]);
 
   function openEdit(student: Student) {
     setEditingStudent(student);

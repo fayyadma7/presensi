@@ -239,6 +239,26 @@ export default function AdminPresensiSiswaPage() {
         }
       });
 
+      const { data: subjectAttData } = await supabase
+        .from("subject_attendances")
+        .select("student_id, log")
+        .eq("date", today)
+        .in("student_id", studentIds);
+
+      const subjectAttMap: Record<string, string> = {};
+      subjectAttData?.forEach((sa: any) => {
+        if (sa.log && Array.isArray(sa.log)) {
+          const teacherMap: Record<string, string> = {};
+          sa.log.forEach((l: any) => {
+            teacherMap[l.teacher_name] = l.status;
+          });
+          const summary = Object.entries(teacherMap)
+            .map(([tName, tStatus]) => `${tName}: ${tStatus === "hadir" ? "H" : tStatus === "terlambat" ? "T" : tStatus === "sakit" ? "S" : tStatus === "izin" ? "I" : tStatus === "dispen" ? "D" : tStatus === "tidak_hadir" ? "TH" : "A"}`)
+            .join(", ");
+          subjectAttMap[sa.student_id] = summary;
+        }
+      });
+
       const classIdMap: Record<string, string> = {};
       for (const cls of classes) { classIdMap[cls.id] = cls.name; }
 
@@ -261,12 +281,12 @@ export default function AdminPresensiSiswaPage() {
           statusKehadiran = statusMap[att.status] || att.status;
           if (att.lat && att.lng) lokasi = `https://www.google.com/maps?q=${att.lat},${att.lng}`;
         }
-        return { No: i + 1, NIS: s.nis, Nama: s.name, Kelas: className, "Status Kehadiran": statusKehadiran, "Detail Lokasi Presensi Masuk": lokasi };
+        return { No: i + 1, NIS: s.nis, Nama: s.name, Kelas: className, "Status Kehadiran": statusKehadiran, "Log Presensi Mapel": subjectAttMap[s.id] || "-", "Detail Lokasi Presensi Masuk": lokasi };
       });
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 18 }, { wch: 50 }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 18 }, { wch: 30 }, { wch: 50 }];
       XLSX.utils.book_append_sheet(wb, ws, "Presensi Harian");
       XLSX.writeFile(wb, `presensi-harian-${today}.xlsx`);
       toast.success("File Excel berhasil diunduh!");
@@ -294,6 +314,7 @@ export default function AdminPresensiSiswaPage() {
 
       const countMap: Record<string, Record<string, number>> = {};
       const notesMap: Record<string, string[]> = {};
+      const mapelMap: Record<string, string[]> = {};
       attDetail?.forEach((a: { student_id: string; date: string; masuk_status: string | null; late_status: string | null; notes: string | null }) => {
         if (!countMap[a.student_id]) countMap[a.student_id] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         if (a.masuk_status === 'hadir') {
@@ -311,18 +332,41 @@ export default function AdminPresensiSiswaPage() {
         }
       });
 
+      const { data: subjectAttData } = await supabase
+        .from("subject_attendances")
+        .select("student_id, date, log")
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .in("student_id", studentIds);
+
+      subjectAttData?.forEach((sa: any) => {
+        if (sa.log && Array.isArray(sa.log)) {
+          const teacherMap: Record<string, string> = {};
+          sa.log.forEach((l: any) => { teacherMap[l.teacher_name] = l.status; });
+          const summary = Object.entries(teacherMap)
+            .map(([tName, tStatus]) => `${tName}: ${tStatus === "hadir" ? "H" : tStatus === "terlambat" ? "T" : tStatus === "sakit" ? "S" : tStatus === "izin" ? "I" : tStatus === "dispen" ? "D" : tStatus === "tidak_hadir" ? "TH" : "A"}`)
+            .join(", ");
+          if (summary) {
+            if (!mapelMap[sa.student_id]) mapelMap[sa.student_id] = [];
+            mapelMap[sa.student_id].push(`[${formatDate(sa.date)}] ${summary}`);
+          }
+        }
+      });
+
       const schoolDays = countSchoolDays(startDate, endDate, holidays);
 
       const rows = recapData.map((r, i) => {
         const counts = countMap[r.student_id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
         const keterangan = (notesMap[r.student_id] || []).join("\n") || "-";
+        const mapelLog = (mapelMap[r.student_id] || []).join("\n") || "-";
         return {
           No: i + 1, NIS: r.nis, Nama: r.name, Kelas: r.className,
           Hadir: counts.hadir, Terlambat: counts.terlambat, Sakit: counts.sakit, Izin: counts.izin,
           Dispen: counts.dispen,
           Alpa: computedAlpa,
           "Keterangan Sakit/Izin/Dispen/Alpa": keterangan,
+          "Log Presensi Mapel": mapelLog,
         };
       });
 
@@ -331,12 +375,14 @@ export default function AdminPresensiSiswaPage() {
       ws["!cols"] = [
         { wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
         { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
-        { wch: 60 },
+        { wch: 40 }, { wch: 50 }
       ];
       const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
       for (let r = range.s.r + 1; r <= range.e.r; r++) {
-        const cell = ws[XLSX.utils.encode_cell({ r, c: 10 })];
-        if (cell) cell.s = { alignment: { wrapText: true, vertical: "top" } };
+        const cell1 = ws[XLSX.utils.encode_cell({ r, c: 10 })];
+        const cell2 = ws[XLSX.utils.encode_cell({ r, c: 11 })];
+        if (cell1) cell1.s = { alignment: { wrapText: true, vertical: "top" } };
+        if (cell2) cell2.s = { alignment: { wrapText: true, vertical: "top" } };
       }
       XLSX.utils.book_append_sheet(wb, ws, "Rekap Filter");
       XLSX.writeFile(wb, `rekap-presensi-${startDate}-sd-${endDate}.xlsx`);
@@ -368,6 +414,7 @@ export default function AdminPresensiSiswaPage() {
 
       const monthCounts: Record<string, Record<string, { hadir: number; terlambat: number; sakit: number; izin: number; dispen: number; alpa: number }>> = {};
       const monthNotes: Record<string, Record<string, string[]>> = {};
+      const monthMapel: Record<string, Record<string, string[]>> = {};
 
       attDetail?.forEach((a: { student_id: string; date: string; masuk_status: string | null; late_status: string | null; notes: string | null }) => {
         const d = new Date(a.date);
@@ -387,6 +434,31 @@ export default function AdminPresensiSiswaPage() {
           const label = a.masuk_status === "sakit" ? "Sakit" : a.masuk_status === "izin" ? "Izin" : a.masuk_status === "dispen" ? "Dispen" : "Alpa";
           const text = a.notes ? `${formatDate(a.date)}: ${label} - ${a.notes}` : `${formatDate(a.date)}: ${label}`;
           monthNotes[a.student_id][mKey].push(text);
+        }
+      });
+
+      const { data: subjectAttData } = await supabase
+        .from("subject_attendances")
+        .select("student_id, date, log")
+        .gte("date", rangeStart)
+        .lte("date", rangeEnd)
+        .in("student_id", studentIds);
+
+      subjectAttData?.forEach((sa: any) => {
+        if (sa.log && Array.isArray(sa.log)) {
+          const teacherMap: Record<string, string> = {};
+          sa.log.forEach((l: any) => { teacherMap[l.teacher_name] = l.status; });
+          const summary = Object.entries(teacherMap)
+            .map(([tName, tStatus]) => `${tName}: ${tStatus === "hadir" ? "H" : tStatus === "terlambat" ? "T" : tStatus === "sakit" ? "S" : tStatus === "izin" ? "I" : tStatus === "dispen" ? "D" : tStatus === "tidak_hadir" ? "TH" : "A"}`)
+            .join(", ");
+          if (summary) {
+            const d = new Date(sa.date);
+            const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+            const sId = sa.student_id;
+            if (!monthMapel[sId]) monthMapel[sId] = {};
+            if (!monthMapel[sId][mKey]) monthMapel[sId][mKey] = [];
+            monthMapel[sId][mKey].push(`[${formatDate(sa.date)}] ${summary}`);
+          }
         }
       });
 
@@ -413,24 +485,28 @@ export default function AdminPresensiSiswaPage() {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const ca = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
           const notes = (monthNotes[r.student_id]?.[mk.key] || []).join("\n") || "-";
+          const mapelLog = (monthMapel[r.student_id]?.[mk.key] || []).join("\n") || "-";
           return {
             No: i + 1, NIS: r.nis, Nama: r.name, Kelas: r.className,
             Hadir: counts.hadir, Terlambat: counts.terlambat, Sakit: counts.sakit, Izin: counts.izin,
             Dispen: counts.dispen,
             Alpa: ca,
             "Keterangan Sakit/Izin/Dispen/Alpa": notes,
+            "Log Presensi Mapel": mapelLog,
           };
         });
         const ws = XLSX.utils.json_to_sheet(rows);
         ws["!cols"] = [
           { wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
           { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
-          { wch: 60 },
+          { wch: 40 }, { wch: 50 }
         ];
         const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
         for (let r = range.s.r + 1; r <= range.e.r; r++) {
-          const cell = ws[XLSX.utils.encode_cell({ r, c: 10 })];
-          if (cell) cell.s = { alignment: { wrapText: true, vertical: "top" } };
+          const cell1 = ws[XLSX.utils.encode_cell({ r, c: 10 })];
+          const cell2 = ws[XLSX.utils.encode_cell({ r, c: 11 })];
+          if (cell1) cell1.s = { alignment: { wrapText: true, vertical: "top" } };
+          if (cell2) cell2.s = { alignment: { wrapText: true, vertical: "top" } };
         }
         XLSX.utils.book_append_sheet(wb, ws, mk.label);
       }

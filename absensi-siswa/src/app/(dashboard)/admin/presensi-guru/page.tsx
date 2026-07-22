@@ -187,8 +187,6 @@ export default function AdminPresensiGuruPage() {
 
     const recap: GuruRecapData[] = usersData.map((u: { id: string; name: string; email: string }) => {
       const counts = countMap[u.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
-      const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.terlambat + counts.sakit + counts.izin));
-      counts.alpa = computedAlpa;
       return { teacher_id: u.id, name: u.name, email: u.email, ...counts };
     });
 
@@ -354,7 +352,6 @@ export default function AdminPresensiGuruPage() {
 
         const rows = usersData.map((u: { id: string; name: string; email: string }, i: number) => {
           const counts = countMap[u.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
-          const computedAlpa = Math.max(0, mSchoolDays - (counts.hadir + counts.terlambat + counts.sakit + counts.izin));
           return {
             No: i + 1,
             Nama: u.name,
@@ -363,7 +360,7 @@ export default function AdminPresensiGuruPage() {
             Terlambat: counts.terlambat,
             Sakit: counts.sakit,
             Izin: counts.izin,
-            Alpa: computedAlpa,
+            Alpa: counts.alpa,
           };
         });
 

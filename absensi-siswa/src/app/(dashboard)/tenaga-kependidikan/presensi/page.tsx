@@ -58,6 +58,7 @@ export default function TenagaKependidikanPresensiPage() {
   const { userId } = useAuth();
 
   const [pageLoading, setPageLoading] = useState(true);
+  const [userName, setUserName] = useState("");
   const [settings, setSettings] = useState<Settings | null>(null);
   const [cachedPosition, setCachedPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [holidays, setHolidays] = useState<string[]>([]);
@@ -100,10 +101,11 @@ export default function TenagaKependidikanPresensiPage() {
       const today = formatDateLocal();
       const year = new Date().getFullYear();
 
-      const [settingsResult, fetchedHolidays, attResult] = await Promise.all([
+      const [settingsResult, fetchedHolidays, attResult, userResult] = await Promise.all([
         supabase.from("settings").select("key, value"),
         fetchHolidays(year),
         supabase.from("teacher_attendance").select("id, teacher_id, date, login_time, logout_time, status, location_lat, location_lng").eq("teacher_id", userId).eq("date", today).maybeSingle(),
+        supabase.from("users").select("name").eq("id", userId).maybeSingle(),
       ]);
 
       const { data: settingsData } = settingsResult;
@@ -123,6 +125,10 @@ export default function TenagaKependidikanPresensiPage() {
 
       const { data: teacherAtt } = attResult;
       setTodayRecord(teacherAtt);
+      
+      if (userResult?.data?.name) {
+        setUserName(userResult.data.name);
+      }
 
       setPageLoading(false);
     }
@@ -375,9 +381,9 @@ export default function TenagaKependidikanPresensiPage() {
             <Clock className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">Presensi Harian</h1>
+            <h1 className="font-heading text-2xl font-bold text-foreground">Selamat datang, {userName || "Tenaga Kependidikan"}!</h1>
             <p className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              Presensi Harian — {new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
         </div>

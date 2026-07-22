@@ -50,6 +50,8 @@ interface Student {
   name: string;
 }
 
+import { SubjectAttendanceModal } from "@/components/SubjectAttendanceModal";
+
 interface Class {
   id: string;
   name: string;
@@ -393,15 +395,13 @@ export default function GuruPresensiPage() {
   const timeDisabledReason = isBeforeHours ? "Belum jam masuk" : isAfterHours ? "Jam pulang sudah berakhir" : "";
 
   const [schedules, setSchedules] = useState<SubjectSchedule[]>([]);
+  const [subjectStudents, setSubjectStudents] = useState<Student[]>([]);
   const [subjectAttendanceModal, setSubjectAttendanceModal] = useState<{
     open: boolean;
     schedule: SubjectSchedule | null;
   }>({ open: false, schedule: null });
-  const [subjectStudents, setSubjectStudents] = useState<Student[]>([]);
-  const [subjectAttendanceMap, setSubjectAttendanceMap] = useState<Record<string, string>>({});
   const [teacherStatusOpen, setTeacherStatusOpen] = useState<SubjectSchedule | null>(null);
   const [currentTeacherName, setCurrentTeacherName] = useState("");
-  const [subjectPriorMap, setSubjectPriorMap] = useState<Record<string, boolean>>({});
 
   const [rekapStartDate, setRekapStartDate] = useState(() => {
     const now = new Date();
@@ -871,115 +871,7 @@ export default function GuruPresensiPage() {
   }
 
   async function openSubjectAttendance(schedule: SubjectSchedule) {
-    const { data } = await supabase
-      .from("students")
-      .select("id, nis, name")
-      .eq("class_id", schedule.class_id)
-      .eq("status", "active")
-      .order("nis");
-
-    setSubjectStudents(data || []);
-
-    const today = formatDateLocal();
-    const studentIds = data?.map((s: Student) => s.id) || [];
-    const attMap: Record<string, string> = {};
-
-    if (studentIds.length > 0) {
-      const { data: saData } = await supabase
-        .from("subject_attendances")
-        .select("student_id, status")
-        .eq("date", today)
-        .in("student_id", studentIds);
-
-      saData?.forEach((a: { student_id: string; status: string }) => {
-        attMap[a.student_id] = a.status;
-      });
-
-      const { data: priorAtt } = await supabase
-        .from("attendance")
-        .select("student_id, masuk_status, late_status")
-        .eq("date", today)
-        .in("student_id", studentIds)
-        .not("masuk_status", "is", null);
-
-      const priorMap: Record<string, boolean> = {};
-      priorAtt?.forEach((a: { student_id: string; masuk_status: string; late_status: string | null }) => {
-        priorMap[a.student_id] = true;
-        // Auto-fill from daily attendance if not already in subject_attendances
-        if (!attMap[a.student_id]) {
-          attMap[a.student_id] = a.late_status === 'terlambat' ? 'terlambat' : a.masuk_status;
-        }
-      });
-      setSubjectPriorMap(priorMap);
-    }
-
-    setSubjectAttendanceMap(attMap);
     setSubjectAttendanceModal({ open: true, schedule });
-  }
-
-  async function markSubjectAttendance(studentId: string, status: string) {
-    const schedule = subjectAttendanceModal.schedule;
-    if (!schedule) return;
-    const today = formatDateLocal();
-    const nowISO = new Date().toISOString();
-
-    // 1. Upsert subject_attendances (atomic via RPC to prevent race condition)
-    const logEntry = { teacher_name: currentTeacherName, status, time: nowISO };
-
-    const { error: saError } = await supabase.rpc("append_subject_attendance_log", {
-      p_student_id: studentId,
-      p_date: today,
-      p_status: status,
-      p_log_entry: logEntry,
-    });
-
-    if (saError) {
-      toast.error("Gagal menyimpan presensi siswa");
-      return;
-    }
-
-    // 2. Upsert attendance
-    await supabase.from("attendance").upsert(
-      { student_id: studentId, date: today, masuk_status: status === 'hadir' ? 'hadir' : status, late_status: status === 'hadir' && isLate() ? 'terlambat' : null, masuk_time: nowISO },
-      { onConflict: "student_id,date" }
-    );
-
-    toast.success("Presensi siswa berhasil disimpan");
-    setSubjectAttendanceMap((prev) => ({ ...prev, [studentId]: status }));
-  }
-
-  async function markAllHadir() {
-    const schedule = subjectAttendanceModal.schedule;
-    if (!schedule) return;
-    const today = formatDateLocal();
-    const nowISO = new Date().toISOString();
-    const logEntry = { teacher_name: currentTeacherName, status: "hadir", time: nowISO };
-
-    const results = await Promise.all(
-      subjectStudents.map(async (student) => {
-        const { error: saError } = await supabase.rpc("append_subject_attendance_log", {
-          p_student_id: student.id,
-          p_date: today,
-          p_status: "hadir",
-          p_log_entry: logEntry,
-        });
-
-        if (!saError) {
-          await supabase.from("attendance").upsert(
-            { student_id: student.id, date: today, masuk_status: "hadir", late_status: isLate() ? 'terlambat' : null, masuk_time: nowISO },
-            { onConflict: "student_id,date" }
-          );
-          return true;
-        }
-        return false;
-      })
-    );
-
-    const count = results.filter(Boolean).length;
-    toast.success(`${count} siswa ditandai Hadir`);
-    const newMap: Record<string, string> = {};
-    subjectStudents.forEach((s) => { newMap[s.id] = "hadir"; });
-    setSubjectAttendanceMap(newMap);
   }
 
   function switchTab(t: string) {
@@ -1761,149 +1653,14 @@ export default function GuruPresensiPage() {
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* Subject Attendance Modal */}
-        <Dialog
+        <SubjectAttendanceModal
           open={subjectAttendanceModal.open}
           onOpenChange={(open) => {
             if (!open) setSubjectAttendanceModal({ open: false, schedule: null });
           }}
-        >
-          <DialogContent className="sm:max-w-[700px] clay-card border-0 !p-0">
-            <div className="p-6 min-w-0">
-              <h2 className="font-heading text-xl font-bold text-foreground text-left break-words">
-                Presensi {subjectAttendanceModal.schedule?.subject_name}
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">
-                {subjectAttendanceModal.schedule?.class_name} ·{' '}
-                {subjectAttendanceModal.schedule?.start_time?.slice(0, 5)}-{subjectAttendanceModal.schedule?.end_time?.slice(0, 5)}
-                {subjectAttendanceModal.schedule?.room ? ` · ${subjectAttendanceModal.schedule.room}` : ""}
-              </p>
-
-              <div className="max-h-[400px] overflow-y-auto overflow-x-auto border border-border/50 rounded-xl">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border/50 bg-muted/20">
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Siswa</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subjectStudents.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="text-center py-8 text-muted-foreground">Tidak ada siswa aktif di kelas ini</td>
-                      </tr>
-                    ) : (
-                      (() => {
-                        const schedule = subjectAttendanceModal.schedule;
-                        const scheduleNowHHMM = (() => {
-                          const d = new Date();
-                          return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-                        })();
-                        const scheduleTimeDisabled = !schedule || !!(
-                          (schedule.start_time && scheduleNowHHMM < schedule.start_time.slice(0, 5)) ||
-                          (schedule.end_time && scheduleNowHHMM > schedule.end_time.slice(0, 5))
-                        );
-
-                        return (
-                          <>
-                            {scheduleTimeDisabled && (
-                              <tr>
-                                <td colSpan={2}>
-                                  <div className="flex items-center gap-2 mx-4 my-3 px-4 py-3 rounded-xl bg-warning/10 border border-warning/20 text-warning text-sm font-medium">
-                                    <AlertTriangle className="h-4 w-4 shrink-0" />
-                                    <span>Di luar jam pelajaran. Presensi siswa tidak dapat dilakukan.</span>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                            <tr>
-                              <td colSpan={2}>
-                                <div className="flex justify-start px-4 py-2">
-                                  <button
-                                    onClick={markAllHadir}
-                                    disabled={scheduleTimeDisabled}
-                                    className={`px-4 py-2 text-white text-sm font-bold rounded-xl cursor-pointer flex items-center gap-2 ${
-                                      scheduleTimeDisabled ? "bg-muted text-muted-foreground/40 cursor-not-allowed" : "clay-button"
-                                    }`}
-                                  >
-                                    <CheckCircle className="h-4 w-4" />
-                                    Semua Hadir
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                            {subjectStudents.map((student) => {
-                          const currentStatus = subjectAttendanceMap[student.id];
-                          return (
-                            <tr key={student.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                              <td className="px-4 py-3">
-                                <p className="text-sm font-medium text-foreground">{student.name}</p>
-                                <p className="text-xs text-muted-foreground font-mono">{student.nis}</p>
-                              </td>
-                              <td className="px-4 py-3 text-right whitespace-nowrap">
-                                <div className="inline-flex items-center gap-1.5">
-                                  {currentStatus ? (
-<span className={`inline-flex items-center px-2 py-1 text-xs font-bold rounded-xl border-2 ${
-  currentStatus === "hadir" ? "bg-success/10 text-success border-success/20" :
-  currentStatus === "terlambat" ? "bg-warning/10 text-warning border-warning/20" :
-  currentStatus === "sakit" ? "bg-warning/10 text-warning border-warning/20" :
-  currentStatus === "izin" ? "bg-info/10 text-info border-info/20" :
-  currentStatus === "dispen" ? "bg-sky-100 text-sky-600 border-sky-200" :
-  "bg-destructive/10 text-destructive border-destructive/20"
-}`}>
-  {currentStatus === "hadir" ? "Hadir" : currentStatus === "terlambat" ? "Terlambat" : currentStatus === "sakit" ? "Sakit" : currentStatus === "izin" ? "Izin" : currentStatus === "dispen" ? "Dispen" : "Alpa"}
-</span>
-                                  ) : (
-                                    <span className="px-2 py-1 text-xs font-bold rounded-xl bg-muted text-muted-foreground border-2 border-border">
-                                      —
-                                    </span>
-                                  )}
-                                  {(["hadir", "sakit", "izin", "dispen", "alpa"] as const).map((st) => {
-                                    const isDisabled = scheduleTimeDisabled;
-                                    const title = scheduleTimeDisabled ? "Di luar jam pelajaran" : "";
-                                    return (
-                                      <button
-                                        key={st}
-                                        onClick={() => !isDisabled && markSubjectAttendance(student.id, st)}
-                                        disabled={isDisabled}
-                                        title={title}
-                                        className={`w-7 h-7 rounded-xl text-[11px] font-bold clay-transition cursor-pointer ${
-                                          isDisabled
-                                            ? "bg-muted text-muted-foreground/40 cursor-not-allowed opacity-50"
-                                            : currentStatus === st
-                                              ? "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(79,70,229,0.3)]"
-                                              : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                                        }`}
-                                      >
-                  {st === "hadir" ? "H" : st === "sakit" ? "S" : st === "izin" ? "I" : st === "dispen" ? "D" : "A"}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </>
-                    );
-                  })()
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end mt-4 pt-4 border-t border-border/50">
-                <button
-                  onClick={() => setSubjectAttendanceModal({ open: false, schedule: null })}
-                  className="clay-button px-5 py-2.5 text-white text-sm font-bold rounded-xl cursor-pointer"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+          schedule={subjectAttendanceModal.schedule}
+          currentTeacherName={currentTeacherName}
+        />
       </div>
     </SkeletonWrapper>
   );

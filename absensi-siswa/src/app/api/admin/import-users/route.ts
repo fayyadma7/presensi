@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       const { error: studentError } = await supabase.from("students").insert({
         id: userId,
         nis: user.nis,
+        barcode: user.nis,
         name: user.name,
         class_id: user.class_id || null,
         email: user.email,
