@@ -507,6 +507,7 @@ export default function RekapPage() {
           };
         });
 
+        const ws = XLSX.utils.json_to_sheet(rows);
         ws["!cols"] = [
           { wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
           { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
