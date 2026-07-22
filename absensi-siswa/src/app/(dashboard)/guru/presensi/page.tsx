@@ -169,7 +169,7 @@ const StudentAttendanceRow = memo(function StudentAttendanceRow({
                   className={`w-7 h-7 rounded-xl text-[11px] font-bold clay-transition ${
                     isDisabled
                       ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
-                      : berangkatStatus === st
+                      : (berangkatStatus === st || (berangkatStatus === "terlambat" && st === "hadir"))
                         ? "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(79,70,229,0.3)]"
                         : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
                   }`}
