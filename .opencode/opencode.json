@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "smartgent",
+  "agent": {
+    "smartgent": {
+      "description": "Elite autonomous developer for production-ready, optimized, one-shot code execution.",
+      "mode": "all"
+    },
+    "buggent": {
+      "description": "🪲 Buggent: The Critical Auditor – Menganalisis bug, memetakan risiko keamanan, memprediksi masalah masa depan, menguji optimalitas & stabilitas sistem.",
+      "mode": "all"
+    },
+    "interfacegent": {
+      "description": "🎨 Interfacegent: Frontend UI/UX & Performance Optimization Agent – Menganalisis, memperbaiki, dan mengoptimalkan kode CSS, struktur UI/UX, serta performa website.",
+      "mode": "all"
+    }
+  }
+}

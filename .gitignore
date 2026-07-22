@@ -1,0 +1,6 @@
+node_modules/
+.next/
+*.env
+.env.local
+ngrok_log.txt
+walkthrough.md
