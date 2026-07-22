@@ -490,8 +490,8 @@ const closeScanner = () => {
         const counts = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         todayAttendance?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null }) => {
           if (a.masuk_status === 'hadir') {
+            counts.hadir++;
             if (a.late_status === 'terlambat') counts.terlambat++;
-            else counts.hadir++;
           } else if (a.masuk_status === 'sakit') counts.sakit++;
           else if (a.masuk_status === 'izin') counts.izin++;
           else if (a.masuk_status === 'dispen') counts.dispen++;
@@ -515,8 +515,8 @@ const closeScanner = () => {
       weekAttendance?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null; date: string }) => {
         if (!dateMap[a.date]) return;
         if (a.masuk_status === 'hadir') {
+          dateMap[a.date].hadir++;
           if (a.late_status === 'terlambat') dateMap[a.date].terlambat++;
-          else dateMap[a.date].hadir++;
         } else if (a.masuk_status === 'sakit') dateMap[a.date].sakit++;
         else if (a.masuk_status === 'izin') dateMap[a.date].izin++;
         else if (a.masuk_status === 'dispen') dateMap[a.date].dispen++;
@@ -539,8 +539,8 @@ const closeScanner = () => {
         const counts = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         todayAttendance?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null }) => {
           if (a.masuk_status === 'hadir') {
+            counts.hadir++;
             if (a.late_status === 'terlambat') counts.terlambat++;
-            else counts.hadir++;
           } else if (a.masuk_status === 'sakit') counts.sakit++;
           else if (a.masuk_status === 'izin') counts.izin++;
           else if (a.masuk_status === 'dispen') counts.dispen++;
@@ -568,8 +568,8 @@ const closeScanner = () => {
       weekAttendance?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null; date: string }) => {
         if (!dateMap[a.date]) return;
         if (a.masuk_status === 'hadir') {
+          dateMap[a.date].hadir++;
           if (a.late_status === 'terlambat') dateMap[a.date].terlambat++;
-          else dateMap[a.date].hadir++;
         } else if (a.masuk_status === 'sakit') dateMap[a.date].sakit++;
         else if (a.masuk_status === 'izin') dateMap[a.date].izin++;
         else if (a.masuk_status === 'dispen') dateMap[a.date].dispen++;
