@@ -1,0 +1,3 @@
+[submodule "absensi-siswa"]
+	path = absensi-siswa
+	url = https://github.com/fayyadma7/presensi.git
