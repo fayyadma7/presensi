@@ -1,0 +1,477 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   CLAYMORPHISM THEME - Warm, Playful, Soft 3D
+   ============================================================ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-comic), 'Comic Sans MS', 'Segoe Print', 'Chalkboard SE', sans-serif;
+  --font-mono: ui-monospace, monospace;
+  --font-heading: var(--font-baloo), 'Arial Rounded MT Bold', 'Rounded Mplus 1c', sans-serif;
+  --font-body: var(--font-comic), 'Comic Sans MS', 'Segoe Print', 'Chalkboard SE', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Claymorphism custom shadows */
+  --shadow-clay: 0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
+  --shadow-clay-lg: 0 4px 12px rgba(0, 0, 0, 0.1), 0 12px 32px rgba(0, 0, 0, 0.06);
+  --shadow-clay-xl: 0 6px 16px rgba(0, 0, 0, 0.12), 0 16px 48px rgba(0, 0, 0, 0.08);
+  --shadow-clay-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-clay-pressed: inset 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-clay-card: 0 2px 8px rgba(79, 70, 229, 0.06), 0 8px 24px rgba(79, 70, 229, 0.04);
+}
+
+:root {
+  /* Claymorphism Color Palette */
+  --background: #EEF2FF;
+  --foreground: #1E1B4B;
+  --card: #FFFFFF;
+  --card-foreground: #1E1B4B;
+  --popover: #FFFFFF;
+  --popover-foreground: #1E1B4B;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #818CF8;
+  --secondary-foreground: #FFFFFF;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #F97316;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --info: #3B82F6;
+  --border: #C7D2FE;
+  --input: #C7D2FE;
+  --ring: #4F46E5;
+  --chart-1: #4F46E5;
+  --chart-2: #F97316;
+  --chart-3: #22C55E;
+  --chart-4: #818CF8;
+  --chart-5: #F59E0B;
+  --radius: 0.75rem; /* Bigger radius for claymorphism */
+  --sidebar: #4F46E5;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #4F46E5;
+  --sidebar-accent: #818CF8;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #6366F1;
+  --sidebar-ring: #C7D2FE;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background: linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 50%, #EEF2FF 100%);
+    min-height: 100vh;
+  }
+  html {
+    @apply font-body;
+  }
+}
+
+/* ============================================================
+   CLAYMORPHISM UTILITY CLASSES
+   ============================================================ */
+
+/* Clay card effect - soft 3D with double shadow */
+.clay-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+@media (hover: hover) {
+  .clay-card:hover {
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      0 12px 32px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
+}
+
+/* Clay pressed effect - for active/pressed buttons */
+.clay-pressed {
+  box-shadow: 
+    inset 0 2px 8px rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  transform: translateY(1px);
+}
+
+/* Clay button - chunky with soft shadow */
+.clay-button {
+  background: linear-gradient(145deg, #5B52F0, #4440D4);
+  border-radius: 14px;
+  box-shadow: 
+    0 4px 12px rgba(79, 70, 229, 0.3),
+    0 8px 24px rgba(79, 70, 229, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (hover: hover) {
+  .clay-button:hover {
+    box-shadow: 
+      0 6px 16px rgba(79, 70, 229, 0.35),
+      0 12px 32px rgba(79, 70, 229, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+  }
+}
+
+.clay-button:active {
+  box-shadow: 
+    inset 0 2px 8px rgba(79, 70, 229, 0.4),
+    0 1px 2px rgba(79, 70, 229, 0.1);
+  transform: translateY(1px);
+}
+
+/* Clay button orange (CTA) */
+.clay-button-accent {
+  background: linear-gradient(145deg, #FF8A3D, #E86A10);
+  border-radius: 14px;
+  box-shadow: 
+    0 4px 12px rgba(249, 115, 22, 0.3),
+    0 8px 24px rgba(249, 115, 22, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (hover: hover) {
+  .clay-button-accent:hover {
+    box-shadow: 
+      0 6px 16px rgba(249, 115, 22, 0.35),
+      0 12px 32px rgba(249, 115, 22, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+  }
+}
+
+/* Clay input - soft inset shadow */
+.clay-input {
+  background: #FFFFFF;
+  border: 3px solid #E0E7FF;
+  border-radius: 14px;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.clay-input:focus {
+  border-color: #818CF8;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.04),
+    0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+/* Bottom Navigation Bar - Glassmorphism + Clay */
+.bottom-nav {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 
+    0 -2px 16px rgba(0, 0, 0, 0.06),
+    0 -8px 32px rgba(0, 0, 0, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Hapus backdrop-filter di mobile untuk performa GPU */
+@media (max-width: 767px) {
+  .bottom-nav {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.97);
+  }
+}
+
+/* Fluffy badge */
+.clay-badge {
+  border-radius: 12px;
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth transitions for all interactive elements */
+.clay-transition {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scrollbar styling for claymorphism feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C7D2FE;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A5B4FC;
+}
+
+/* ============================================================
+   CLAYMORPHISM TOAST NOTIFICATIONS
+   Soft 3D, type-specific shadows, accent bars, bounce-in
+   ============================================================ */
+
+/* Hide close button entirely */
+[data-sonner-toaster] [data-sonner-toast] button[data-close],
+[data-sonner-toaster] [data-sonner-toast] [data-close] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Base toast: claymorphism foundation */
+[data-sonner-toaster] [data-sonner-toast] {
+  font-family: var(--font-body), 'Comic Neue', cursive !important;
+  border-radius: 20px !important;
+  background: #FFFFFF !important;
+  border: 3px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.04) !important;
+  padding: 14px 18px 14px 22px !important;
+  margin-bottom: 10px !important;
+  overflow: hidden;
+  position: relative;
+  min-height: 52px !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Left accent bar */
+[data-sonner-toaster] [data-sonner-toast]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 5px;
+  border-radius: 0 6px 6px 0;
+  background: var(--toast-accent, #4F46E5);
+}
+
+/* Progress bar at bottom */
+[data-sonner-toaster] [data-sonner-toast]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 100%;
+  background: var(--toast-accent, #4F46E5);
+  opacity: 0.55;
+  border-radius: 0 0 18px 18px;
+  animation: toast-progress 4s linear forwards;
+}
+
+@keyframes toast-progress {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* Toast content typography */
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-family: var(--font-heading), 'Baloo 2', cursive !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  color: #1E1B4B !important;
+  margin-bottom: 1px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  font-family: var(--font-body), 'Comic Neue', cursive !important;
+  font-weight: 400 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: #475569 !important;
+}
+
+/* Icon circle backgrounds */
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--toast-icon-bg, rgba(79, 70, 229, 0.1)) !important;
+  margin-right: 12px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-icon] svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Entrance animation */
+@keyframes clay-toast-in {
+  0% { opacity: 0; transform: translateY(-16px) scale(0.92); }
+  50% { opacity: 1; transform: translateY(2px) scale(1.01); }
+  75% { transform: translateY(-1px) scale(0.995); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  animation: clay-toast-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+}
+
+/* SUCCESS - Green */
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  --toast-accent: #22C55E;
+  --toast-icon-bg: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.12), 0 8px 24px rgba(34, 197, 94, 0.06) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] {
+  color: #22C55E !important;
+}
+
+/* ERROR - Red */
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  --toast-accent: #EF4444;
+  --toast-icon-bg: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.12), 0 8px 24px rgba(239, 68, 68, 0.06) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
+  color: #EF4444 !important;
+}
+
+/* WARNING - Amber */
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"] {
+  --toast-accent: #F59E0B;
+  --toast-icon-bg: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12), 0 8px 24px rgba(245, 158, 11, 0.06) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"] [data-icon] {
+  color: #F59E0B !important;
+}
+
+/* INFO - Blue */
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] {
+  --toast-accent: #3B82F6;
+  --toast-icon-bg: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12), 0 8px 24px rgba(59, 130, 246, 0.06) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] [data-icon] {
+  color: #3B82F6 !important;
+}
+
+/* DEFAULT - Indigo */
+[data-sonner-toaster] [data-sonner-toast]:not([data-type]) {
+  --toast-accent: #4F46E5;
+  --toast-icon-bg: rgba(79, 70, 229, 0.1);
+  border-color: rgba(79, 70, 229, 0.15) !important;
+}
+
+/* Toaster container */
+[data-sonner-toaster] {
+  font-family: var(--font-body), 'Comic Neue', cursive !important;
+  gap: 10px !important;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toaster] [data-sonner-toast] {
+    animation-duration: 0.01ms !important;
+  }
+  [data-sonner-toaster] [data-sonner-toast]::after {
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   LOGIN BACKGROUND — WhatsApp-style Doodle Pattern
+   ============================================================ */
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.login-bg {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg stroke='%234F46E5' fill='none' stroke-width='1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(8,10) rotate(-15)' opacity='0.13'%3E%3Cpath d='M0 12L8 0l8 12-8 3z'/%3E%3Cline x1='8' y1='15' x2='8' y2='20'/%3E%3C/g%3E%3Cg transform='translate(55,6)' opacity='0.11'%3E%3Cpath d='M0 2L0 18 12 16 12-1z'/%3E%3Cpath d='M12-1L12 16 24 18 24 2z'/%3E%3C/g%3E%3Cg transform='translate(110,8)' opacity='0.10'%3E%3Ccircle cx='7' cy='7' r='6'/%3E%3Ccircle cx='22' cy='7' r='6'/%3E%3Ccircle cx='14' cy='18' r='6'/%3E%3C/g%3E%3Cg transform='translate(132,42)' opacity='0.11'%3E%3Crect width='24' height='5' rx='1'/%3E%3Cline x1='3' y1='0' x2='3' y2='3'/%3E%3Cline x1='7' y1='0' x2='7' y2='2'/%3E%3Cline x1='11' y1='0' x2='11' y2='3'/%3E%3Cline x1='15' y1='0' x2='15' y2='2'/%3E%3Cline x1='19' y1='0' x2='19' y2='3'/%3E%3C/g%3E%3Cg transform='translate(18,62)' opacity='0.12'%3E%3Cpath d='M12 0L0 6l12 6 12-6z'/%3E%3Cpath d='M4 8v6q8 3 16 0v-6'/%3E%3C/g%3E%3Cg transform='translate(88,60)' opacity='0.10'%3E%3Cpath d='M8 0Q0 0 0 8q0 7 5 9v3h10v-3q5-2 5-9Q18 0 8 0'/%3E%3Cline x1='5' y1='21' x2='11' y2='21'/%3E%3C/g%3E%3Cg transform='translate(130,88)' opacity='0.11'%3E%3Cpath d='M7 5Q1 5 1 12q0 9 6 12 6-3 6-12Q13 5 7 5'/%3E%3Cpath d='M7 5q0-3 2-4'/%3E%3Cpath d='M9 4q2 0 3 1'/%3E%3C/g%3E%3Cg transform='translate(6,108)' opacity='0.11'%3E%3Cpath d='M6 0L0 6l6 6 6-6z'/%3E%3Cline x1='6' y1='6' x2='6' y2='10'/%3E%3C/g%3E%3Cg transform='translate(48,114)' opacity='0.10'%3E%3Cpath d='M8 2L0 10h5l-3 8 10-6H7l6-8h-5z'/%3E%3C/g%3E%3Cg transform='translate(92,110)' opacity='0.12'%3E%3Crect width='18' height='24' rx='2'/%3E%3Cline x1='4' y1='7' x2='14' y2='7'/%3E%3Cline x1='4' y1='11' x2='12' y2='11'/%3E%3Cline x1='4' y1='15' x2='13' y2='15'/%3E%3C/g%3E%3Cg transform='translate(6,146)' opacity='0.10'%3E%3Cpath d='M4 0l1 4 4 1-3 3 1 4-4-2-4 2 1-4-3-3 4-1z'/%3E%3C/g%3E%3Cg transform='translate(54,148)' opacity='0.11'%3E%3Cpath d='M0 0h18v2H0z'/%3E%3Cpath d='M3 2v4'/%3E%3Cpath d='M7 2v5'/%3E%3Cpath d='M11 2v4'/%3E%3Cpath d='M15 2v5'/%3E%3C/g%3E%3Cg transform='translate(112,144)' opacity='0.10'%3E%3Ccircle cx='8' cy='8' r='7'/%3E%3Cline x1='8' y1='1' x2='8' y2='4'/%3E%3Cline x1='8' y1='12' x2='8' y2='15'/%3E%3Cline x1='1' y1='8' x2='4' y2='8'/%3E%3Cline x1='12' y1='8' x2='15' y2='8'/%3E%3C/g%3E%3Cg transform='translate(142,128)' opacity='0.11'%3E%3Cpath d='M0 0c4-2 8-2 12 0v8H0z'/%3E%3Cline x1='3' y1='8' x2='3' y2='12'/%3E%3Cline x1='9' y1='8' x2='9' y2='12'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(135deg, #EEF2FF 0%, #F5F3FF 25%, #EDE9FE 50%, #F0F4FF 75%, #EEF2FF 100%);
+  background-size: 160px 160px, 300% 300%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-bg {
+    animation: none !important;
+  }
+}

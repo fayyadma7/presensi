@@ -1,0 +1,13 @@
+
+> absensi-siswa@0.1.0 dev
+> next dev --webpack
+
+▲ Next.js 16.2.9 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.105:3000
+- Environments: .env.local
+✓ Ready in 478ms
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+○ Compiling /login ...
+ GET /login 200 in 8.7s (next.js: 8.3s, proxy.ts: 21ms, application-code: 380ms)
