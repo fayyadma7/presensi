@@ -368,6 +368,7 @@ const closeScanner = () => {
   const closeScanResult = () => {
     setScanResultOpen(false);
     setScannedBarcode(undefined);
+    fetchClassData(selectedClassId, holidays);
   };
 
   const currentYear = new Date().getFullYear();
@@ -1164,7 +1165,12 @@ const closeScanner = () => {
       <ScanResultModal
         isOpen={scanResultOpen}
         onClose={closeScanResult}
-        onScanNext={() => { setScanResultOpen(false); setScannedBarcode(undefined); setScannerOpen(true); }}
+        onScanNext={() => { 
+          setScanResultOpen(false); 
+          setScannedBarcode(undefined); 
+          setScannerOpen(true); 
+          fetchClassData(selectedClassId, holidays);
+        }}
         scannedBarcode={scannedBarcode}
         isHoliday={!todayIsSchoolDay}
       />
