@@ -624,6 +624,7 @@ const closeScanner = () => {
 
       const { data: userData } = userResult;
       if (userData?.role === "siswa") { router.push("/siswa/presensi"); return; }
+      if (userData?.role === "tenaga_kependidikan") { router.push("/tenaga-kependidikan/presensi"); return; }
 
       const role = userData?.role || "";
       const uname = userData?.name || "";
@@ -858,13 +859,13 @@ const closeScanner = () => {
         <h2 className="font-heading text-lg font-bold text-foreground mb-4 text-center">
           Kehadiran Siswa 5 Hari Terakhir{selectedClassName ? ` — ${selectedClassName}` : ""}
         </h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={weeklyData}>
+        <ResponsiveContainer width="100%" height={330}>
+          <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E0E7FF" />
-            <XAxis dataKey="day" stroke="#64748B" fontSize={12} />
+            <XAxis dataKey="day" stroke="#64748B" fontSize={12} tickMargin={10} />
             <YAxis stroke="#64748B" fontSize={12} />
             <Tooltip contentStyle={{ background: "white", border: "none", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }} />
-            <Legend />
+            <Legend wrapperStyle={{ paddingTop: "20px" }} />
             <Bar dataKey="hadir" stackId="a" fill="#22C55E" name="Hadir" />
             <Bar dataKey="terlambat" stackId="a" fill="#F59E0B" name="Terlambat" />
             <Bar dataKey="sakit" stackId="a" fill="#14B8A6" name="Sakit" />
