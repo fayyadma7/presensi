@@ -111,7 +111,9 @@ export default function StudentListModal({
         time: timeMap[s.id] ?? null,
       }));
 
-      if (status) {
+      if (status === 'hadir') {
+        result = result.filter((s) => s.status === 'hadir' || s.status === 'terlambat');
+      } else if (status) {
         result = result.filter((s) => s.status === status);
       }
 
