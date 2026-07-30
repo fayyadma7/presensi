@@ -212,19 +212,19 @@ export default function ScanResultModal({
       return;
     }
 
-    // 2. Upsert subject_attendances (atomic via RPC to prevent race condition)
-    if (autoStatus !== 'pulang') {
-      try {
-        const logEntry = { teacher_name: currentTeacherName, status: autoStatus, time: nowISO };
-        await supabase.rpc("append_subject_attendance_log", {
-          p_student_id: student.id,
-          p_date: today,
-          p_status: autoStatus,
-          p_log_entry: logEntry,
-        });
-      } catch (e) {
-        console.warn('Subject attendance upsert skipped (best-effort):', e);
-      }
+    try {
+      const logEntry = {
+        action: autoStatus,
+        source: "Scan Barcode",
+        time: nowISO
+      };
+      await supabase.rpc("append_attendance_log", {
+        p_student_id: student.id,
+        p_date: today,
+        p_log_entry: logEntry,
+      });
+    } catch (e) {
+      console.warn("Attendance log append skipped (best-effort):", e);
     }
 
     playSuccessSound();

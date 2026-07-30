@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchHolidays, getHolidayName } from "@/lib/holidays";
 import { isSchoolDay, formatDateLocal } from "@/lib/helpers";
-import { getCurrentPosition, getGPSErrorMessage } from "@/lib/geofencing";
+import { getCurrentPosition, getGPSErrorMessage, isWithinSchool } from "@/lib/geofencing";
 import { CheckCircle, Clock, Calendar, Loader2, MapPin, MapPinOff, CalendarOff, HeartPulse, FileText, AlertCircle, IdCard, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import BarcodeDisplay from "@/components/BarcodeDisplay";
@@ -24,6 +24,9 @@ interface Settings {
   afternoon_start: string;
   afternoon_end: string;
   auto_late: string;
+  geofence_radius: string;
+  school_lat: string;
+  school_lng: string;
 }
 
 interface TodayRecord {
@@ -88,8 +91,9 @@ export default function SiswaPresensiPage() {
     return () => clearInterval(id);
   }, []);
 
-  const [confirmAction, setConfirmAction] = useState<"pulang" | "sakit" | "izin" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"masuk" | "pulang" | "sakit" | "izin" | null>(null);
   const [notes, setNotes] = useState("");
+  const [markingMasuk, setMarkingMasuk] = useState(false);
   const [markingPulang, setMarkingPulang] = useState(false);
   const [markingSakit, setMarkingSakit] = useState(false);
   const [markingIzin, setMarkingIzin] = useState(false);
@@ -141,6 +145,9 @@ export default function SiswaPresensiPage() {
     if (settingsData) {
       const map: Record<string, string> = {};
       settingsData.forEach((s: { key: string; value: string }) => (map[s.key] = s.value));
+      if (!map.geofence_radius) map.geofence_radius = "100";
+      if (!map.school_lat) map.school_lat = "-7.4212";
+      if (!map.school_lng) map.school_lng = "109.4418";
       setSettings(map as unknown as Settings);
     }
 
@@ -233,6 +240,9 @@ export default function SiswaPresensiPage() {
   const isAfterHours = settings ? nowHHMM > settings.afternoon_end : false;
   const timeDisabled = todayIsSchoolDay && (isBeforeHours || isAfterHours);
   const timeDisabledReason = isBeforeHours ? "Belum jam masuk" : isAfterHours ? "Jam pulang sudah berakhir" : "";
+  const geofenceValid = cachedPosition && settings
+    ? isWithinSchool(cachedPosition.lat, cachedPosition.lng, parseFloat(settings.school_lat), parseFloat(settings.school_lng), parseInt(settings.geofence_radius, 10))
+    : false;
 
   // Fetch paginated history
   const fetchHistory = useCallback(async () => {
@@ -258,7 +268,7 @@ export default function SiswaPresensiPage() {
     fetchHistory();
   }, [fetchHistory]);
 
-  const handleSubmit = useCallback(async (type: "pulang" | "sakit" | "izin", alasan?: string) => {
+  const handleSubmit = useCallback(async (type: "masuk" | "pulang" | "sakit" | "izin", alasan?: string) => {
     if (!todayIsSchoolDay) {
       setResult({ success: false, message: "Hari ini hari libur. Presensi tidak tersedia." });
       return;
@@ -281,8 +291,8 @@ export default function SiswaPresensiPage() {
       return;
     }
 
-    // GPS valid check for pulang (must be in school area)
-    if (type === "pulang" && gpsStatus !== "valid") {
+    // Check geofence for masuk & pulang (must be in school area)
+    if ((type === "masuk" || type === "pulang") && !geofenceValid) {
       setResult({ success: false, message: "Anda berada di luar area sekolah. Maju ke area sekolah untuk presensi." });
       toast.error("Anda berada di luar area sekolah.");
       return;
@@ -291,7 +301,8 @@ export default function SiswaPresensiPage() {
     setSubmitting(true);
     setResult(null);
 
-    if (type === "pulang") setMarkingPulang(true);
+    if (type === "masuk") setMarkingMasuk(true);
+    else if (type === "pulang") setMarkingPulang(true);
     else if (type === "sakit") setMarkingSakit(true);
     else if (type === "izin") setMarkingIzin(true);
 
@@ -304,8 +315,16 @@ export default function SiswaPresensiPage() {
 
       const today = formatDateLocal();
       let dbStatus: "hadir" | "terlambat" | "sakit" | "izin" = "hadir";
+      let lateStatus: string | null = null;
 
-      if (type === "pulang") {
+      if (type === "masuk") {
+        if (!isMasukTime) {
+          setResult({ success: false, message: "Bukan jam presensi masuk." });
+          return;
+        }
+        dbStatus = "hadir";
+        if (timeWindow.isLate) lateStatus = "terlambat";
+      } else if (type === "pulang") {
         if (!isPulangTime) {
           setResult({ success: false, message: "Bukan jam presensi pulang." });
           return;
@@ -325,7 +344,13 @@ export default function SiswaPresensiPage() {
         .eq("date", today)
         .maybeSingle();
 
-      if (type === "pulang") {
+      if (type === "masuk") {
+        if (existingRec?.masuk_status) {
+          setResult({ success: false, message: "Anda sudah melakukan presensi masuk hari ini." });
+          toast.info("Anda sudah melakukan presensi masuk hari ini.");
+          return;
+        }
+      } else if (type === "pulang") {
         if (existingRec?.pulang_status) {
           setResult({ success: false, message: "Anda sudah melakukan presensi pulang hari ini." });
           toast.info("Anda sudah melakukan presensi pulang hari ini.");
@@ -344,36 +369,54 @@ export default function SiswaPresensiPage() {
       const lng = cachedPosition?.lng ?? null;
 
       let error;
+      const nowISO = new Date().toISOString();
       if (existingRec) {
         // Update existing row
+        const updatePayload: Record<string, unknown> = {};
+        if (type === "pulang") {
+          updatePayload.pulang_status = "pulang";
+          updatePayload.pulang_time = nowISO;
+        } else if (type === "masuk") {
+          updatePayload.masuk_status = "hadir";
+          updatePayload.masuk_time = nowISO;
+          updatePayload.late_status = lateStatus;
+        } else {
+          updatePayload.masuk_status = dbStatus;
+          updatePayload.masuk_time = nowISO;
+        }
+        if (alasan) updatePayload.notes = alasan;
+        updatePayload.location_lat = lat;
+        updatePayload.location_lng = lng;
+
         const result = await supabase
           .from("attendance")
-          .update({
-            ...(type === "pulang"
-              ? { pulang_status: "pulang", pulang_time: new Date().toISOString() }
-              : { masuk_status: dbStatus, masuk_time: new Date().toISOString() }
-            ),
-            ...(alasan ? { notes: alasan } : {}),
-            location_lat: lat,
-            location_lng: lng,
-          })
+          .update(updatePayload)
           .eq("id", existingRec.id);
         error = result.error;
       } else {
         // Insert new row
+        const insertPayload: Record<string, unknown> = {
+          student_id: userId,
+          date: today,
+        };
+        if (type === "pulang") {
+          insertPayload.pulang_status = "pulang";
+          insertPayload.pulang_time = nowISO;
+        } else if (type === "masuk") {
+          insertPayload.masuk_status = "hadir";
+          insertPayload.masuk_time = nowISO;
+          insertPayload.late_status = lateStatus;
+        } else {
+          insertPayload.masuk_status = dbStatus;
+          insertPayload.masuk_time = nowISO;
+        }
+        if (alasan) insertPayload.notes = alasan;
+        insertPayload.location_lat = lat;
+        insertPayload.location_lng = lng;
+
         const result = await supabase
           .from("attendance")
-          .insert({
-            student_id: userId,
-            date: today,
-            ...(type === "pulang"
-              ? { pulang_status: "pulang", pulang_time: new Date().toISOString() }
-              : { masuk_status: dbStatus, masuk_time: new Date().toISOString() }
-            ),
-            ...(alasan ? { notes: alasan } : {}),
-            location_lat: lat,
-            location_lng: lng,
-          });
+          .insert(insertPayload);
         error = result.error;
       }
 
@@ -384,10 +427,26 @@ export default function SiswaPresensiPage() {
         return;
       }
 
+      // Tambah log presensi kehadiran siswa (best-effort)
+      try {
+        const logEntry = {
+          action: type === "masuk" ? (lateStatus === "terlambat" ? "terlambat" : "hadir") : type,
+          source: "Mandiri",
+          time: nowISO,
+        };
+        await supabase.rpc("append_attendance_log", {
+          p_student_id: userId,
+          p_date: today,
+          p_log_entry: logEntry,
+        });
+      } catch (e) {
+        console.warn("Attendance log append skipped (best-effort):", e);
+      }
+
       // Refresh today's record
       const { data: updated } = await supabase
         .from("attendance")
-        .select("masuk_status, masuk_time, pulang_status, pulang_time, created_at")
+        .select("masuk_status, late_status, masuk_time, pulang_status, pulang_time, created_at")
         .eq("student_id", userId)
         .eq("date", today)
         .maybeSingle();
@@ -396,15 +455,17 @@ export default function SiswaPresensiPage() {
       // Refresh history paginasi
       fetchHistory();
 
-      setResult({ success: true, message: `Presensi ${type} berhasil dicatat!` });
-      toast.success(`Presensi ${type} berhasil dicatat!`);
+      const label = type === "masuk" ? "masuk" : type;
+      setResult({ success: true, message: `Presensi ${label} berhasil dicatat!` });
+      toast.success(`Presensi ${label} berhasil dicatat!`);
     } finally {
       setSubmitting(false);
-      if (type === "pulang") setMarkingPulang(false);
+      if (type === "masuk") setMarkingMasuk(false);
+      else if (type === "pulang") setMarkingPulang(false);
       else if (type === "sakit") setMarkingSakit(false);
       else if (type === "izin") setMarkingIzin(false);
     }
-  }, [supabase, cachedPosition, todayRecord, todayIsSchoolDay, gpsStatus, userId, timeWindow, isMasukTime, isPulangTime, timeDisabled, timeDisabledReason, fetchHistory]);
+  }, [supabase, cachedPosition, todayRecord, todayIsSchoolDay, gpsStatus, userId, timeWindow, isMasukTime, isPulangTime, geofenceValid, timeDisabled, timeDisabledReason, fetchHistory]);
 
   return (
     <SkeletonWrapper loading={loading} skeleton={<PresensiSkeleton />}>
@@ -469,8 +530,17 @@ export default function SiswaPresensiPage() {
             )}
             {gpsStatus === "valid" && (
               <>
-                <MapPin className="h-4 w-4 text-green-600" />
-                <span className="text-green-600 font-medium">Lokasi terdeteksi</span>
+                {geofenceValid ? (
+                  <>
+                    <MapPin className="h-4 w-4 text-green-600" />
+                    <span className="text-green-600 font-medium">Di area sekolah</span>
+                  </>
+                ) : (
+                  <>
+                    <MapPinOff className="h-4 w-4 text-red-500" />
+                    <span className="text-red-500 font-medium">Di luar area sekolah</span>
+                  </>
+                )}
               </>
             )}
             {gpsStatus === "timeout" && (
@@ -491,7 +561,7 @@ export default function SiswaPresensiPage() {
                 <span className="text-gray-500">GPS tidak tersedia</span>
               </>
             )}
-            {(gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied") && (
+            {(gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" || (gpsStatus === "valid" && !geofenceValid)) && (
               <button
                 onClick={fetchGPS}
                 className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-bold hover:bg-indigo-100 transition-colors cursor-pointer"
@@ -501,8 +571,12 @@ export default function SiswaPresensiPage() {
               </button>
             )}
           </div>
-          {(gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable") && (
-            <p className="text-xs text-gray-500 mt-1 ml-6">{getGPSErrorMessage(gpsStatus)}</p>
+          {(gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable" || (gpsStatus === "valid" && !geofenceValid)) && (
+            <p className="text-xs text-gray-500 mt-1 ml-6">
+              {gpsStatus === "valid" && !geofenceValid
+                ? `Anda berada di luar area sekolah (radius ${settings?.geofence_radius || "100"}m)`
+                : getGPSErrorMessage(gpsStatus as "unavailable" | "timeout" | "denied")}
+            </p>
           )}
         </div>
 
@@ -561,6 +635,31 @@ export default function SiswaPresensiPage() {
           )}
 
           <div className="flex flex-wrap gap-3">
+            {/* Presensi Masuk */}
+            {isMasukTime && !todayRecord?.masuk_status && (
+              <button
+                onClick={() => { setConfirmAction("masuk"); setNotes(""); }}
+                disabled={submitting || markingMasuk || gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" || !geofenceValid || timeDisabled}
+                title={timeDisabled ? timeDisabledReason : !geofenceValid ? "Anda di luar area sekolah" : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
+                className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm ${
+                  submitting || markingMasuk
+                    ? "bg-green-300 text-white cursor-wait"
+                    : timeDisabled || !geofenceValid
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                      : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied"
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
+                        : "bg-green-100 text-green-600 cursor-pointer"
+                }`}
+              >
+                {markingMasuk ? (
+                  <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <CheckCircle className="h-5 w-5" />
+                )}
+                {markingMasuk ? "Memproses..." : "Presensi Masuk"}
+              </button>
+            )}
+
             {/* Presensi Pulang */}
             {isPulangTime && hasMasuk && !hasPulang && (
               <button
@@ -642,6 +741,13 @@ export default function SiswaPresensiPage() {
               </button>
             )}
 
+            {/* Status sudah presensi masuk */}
+            {todayRecord?.masuk_status && !isSakitOrIzin && (
+              <button disabled className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-green-100 text-green-600 cursor-not-allowed">
+                <CheckCircle className="h-5 w-5" />
+                {todayRecord.masuk_status === "alpa" ? "Sudah Presensi" : "Sudah Presensi Masuk"}
+              </button>
+            )}
             {/* Status sudah presensi pulang */}
             {hasPulang && (
               <button disabled className="flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm bg-green-100 text-green-600 cursor-not-allowed">
@@ -812,11 +918,13 @@ export default function SiswaPresensiPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              {confirmAction === "pulang" ? "Presensi Pulang?" : 
+              {confirmAction === "masuk" ? "Presensi Masuk?" : 
+               confirmAction === "pulang" ? "Presensi Pulang?" : 
                confirmAction === "sakit" ? "Presensi Sakit?" : 
                confirmAction === "izin" ? "Presensi Izin?" : ""}
             </h3>
             <p className="text-sm text-gray-500 mb-4">
+              {confirmAction === "masuk" && (timeWindow.isLate ? "Anda terlambat. Konfirmasi presensi masuk?" : "Konfirmasi presensi masuk hari ini?")}
               {confirmAction === "pulang" && "Konfirmasi presensi pulang hari ini?"}
               {(confirmAction === "sakit" || confirmAction === "izin") && "Pastikan GPS aktif. Lokasi Anda akan dicatat untuk verifikasi guru."}
             </p>
@@ -837,19 +945,20 @@ export default function SiswaPresensiPage() {
               </button>
               <button
                 onClick={() => {
-                  if (confirmAction === "pulang") handleSubmit("pulang");
+                  if (confirmAction === "masuk") handleSubmit("masuk");
+                  else if (confirmAction === "pulang") handleSubmit("pulang");
                   else if (confirmAction === "sakit") handleSubmit("sakit", notes.trim());
                   else if (confirmAction === "izin") handleSubmit("izin", notes.trim());
                   setConfirmAction(null);
                 }}
-                disabled={confirmAction !== "pulang" && notes.trim() === ""}
+                disabled={confirmAction !== "pulang" && confirmAction !== "masuk" && notes.trim() === ""}
                 className={`font-bold text-sm px-4 py-2 rounded-xl ${
-                  confirmAction !== "pulang" && notes.trim() === ""
+                  confirmAction !== "pulang" && confirmAction !== "masuk" && notes.trim() === ""
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-indigo-600 text-white cursor-pointer"
                 }`}
               >
-                Ya, {confirmAction === "pulang" ? "Presensi Pulang" : confirmAction === "sakit" ? "Presensi Sakit" : "Presensi Izin"}
+                Ya, {confirmAction === "masuk" ? "Presensi Masuk" : confirmAction === "pulang" ? "Presensi Pulang" : confirmAction === "sakit" ? "Presensi Sakit" : "Presensi Izin"}
               </button>
             </div>
           </div>

@@ -312,26 +312,7 @@ export default function RekapPage() {
         }
       });
 
-      const { data: subjectAttData } = await supabase
-        .from("subject_attendances")
-        .select("student_id, date, log")
-        .gte("date", startDate)
-        .lte("date", endDate)
-        .in("student_id", studentIds);
-
-      subjectAttData?.forEach((sa: any) => {
-        if (sa.log && Array.isArray(sa.log)) {
-          const teacherMap: Record<string, string> = {};
-          sa.log.forEach((l: any) => { teacherMap[l.teacher_name] = l.status; });
-          const summary = Object.entries(teacherMap)
-            .map(([tName, tStatus]) => `${tName}: ${tStatus === "hadir" ? "H" : tStatus === "terlambat" ? "T" : tStatus === "sakit" ? "S" : tStatus === "izin" ? "I" : tStatus === "dispen" ? "D" : tStatus === "tidak_hadir" ? "TH" : "A"}`)
-            .join(", ");
-          if (summary) {
-            if (!mapelMap[sa.student_id]) mapelMap[sa.student_id] = [];
-            mapelMap[sa.student_id].push(`[${formatDate(sa.date)}] ${summary}`);
-          }
-        }
-      });
+      // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
 
       const schoolDays = countSchoolDays(startDate, endDate, holidays);
 
@@ -339,7 +320,6 @@ export default function RekapPage() {
         const counts = countMap[r.student_id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
         const keterangan = (notesMap[r.student_id] || []).join("\n") || "-";
-        const mapelLog = (mapelMap[r.student_id] || []).join("\n") || "-";
         return {
           No: i + 1,
           NIS: r.nis,
@@ -352,7 +332,6 @@ export default function RekapPage() {
           Dispen: counts.dispen,
           Alpa: computedAlpa,
           "Keterangan Sakit/Izin/Dispen/Alpa": keterangan,
-          "Log Presensi Mapel": mapelLog,
         };
       });
 
@@ -361,16 +340,14 @@ export default function RekapPage() {
       ws["!cols"] = [
         { wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
         { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
-        { wch: 40 }, { wch: 50 }
+        { wch: 40 }
       ];
 
-      // Enable wrap text for keterangan and log mapel columns
+      // Enable wrap text for keterangan column
       const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
       for (let r = range.s.r + 1; r <= range.e.r; r++) {
         const cell1 = ws[XLSX.utils.encode_cell({ r, c: 10 })];
-        const cell2 = ws[XLSX.utils.encode_cell({ r, c: 11 })];
         if (cell1) cell1.s = { alignment: { wrapText: true, vertical: "top" } };
-        if (cell2) cell2.s = { alignment: { wrapText: true, vertical: "top" } };
       }
 
       XLSX.utils.book_append_sheet(wb, ws, "Rekap Filter");
@@ -411,7 +388,6 @@ export default function RekapPage() {
       // Build per-student per-month counts
       const monthCounts: Record<string, Record<string, { hadir: number; terlambat: number; sakit: number; izin: number; dispen: number; alpa: number }>> = {};
       const monthNotes: Record<string, Record<string, string[]>> = {};
-      const monthMapel: Record<string, Record<string, string[]>> = {};
 
       attDetail?.forEach((a: AttendanceDetail & { late_status?: string | null }) => {
         const d = new Date(a.date);
@@ -437,30 +413,7 @@ export default function RekapPage() {
         }
       });
 
-      const { data: subjectAttData } = await supabase
-        .from("subject_attendances")
-        .select("student_id, date, log")
-        .gte("date", rangeStart)
-        .lte("date", rangeEnd)
-        .in("student_id", studentIds);
-
-      subjectAttData?.forEach((sa: any) => {
-        if (sa.log && Array.isArray(sa.log)) {
-          const teacherMap: Record<string, string> = {};
-          sa.log.forEach((l: any) => { teacherMap[l.teacher_name] = l.status; });
-          const summary = Object.entries(teacherMap)
-            .map(([tName, tStatus]) => `${tName}: ${tStatus === "hadir" ? "H" : tStatus === "terlambat" ? "T" : tStatus === "sakit" ? "S" : tStatus === "izin" ? "I" : tStatus === "dispen" ? "D" : tStatus === "tidak_hadir" ? "TH" : "A"}`)
-            .join(", ");
-          if (summary) {
-            const d = new Date(sa.date);
-            const mKey = `${d.getFullYear()}-${d.getMonth()}`;
-            const sId = sa.student_id;
-            if (!monthMapel[sId]) monthMapel[sId] = {};
-            if (!monthMapel[sId][mKey]) monthMapel[sId][mKey] = [];
-            monthMapel[sId][mKey].push(`[${formatDate(sa.date)}] ${summary}`);
-          }
-        }
-      });
+      // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
 
       const wb = XLSX.utils.book_new();
 
@@ -490,7 +443,6 @@ export default function RekapPage() {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
           const notes = (monthNotes[r.student_id]?.[mk.key] || []).join("\n") || "-";
-          const mapelLog = (monthMapel[r.student_id]?.[mk.key] || []).join("\n") || "-";
           return {
             No: i + 1,
             NIS: r.nis,
@@ -503,7 +455,6 @@ export default function RekapPage() {
             Dispen: counts.dispen,
             Alpa: computedAlpa,
             "Keterangan Sakit/Izin/Dispen/Alpa": notes,
-            "Log Presensi Mapel": mapelLog,
           };
         });
 
@@ -511,15 +462,13 @@ export default function RekapPage() {
         ws["!cols"] = [
           { wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 },
           { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
-          { wch: 40 }, { wch: 50 }
+          { wch: 40 }
         ];
 
         const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
         for (let r = range.s.r + 1; r <= range.e.r; r++) {
           const cell1 = ws[XLSX.utils.encode_cell({ r, c: 10 })];
-          const cell2 = ws[XLSX.utils.encode_cell({ r, c: 11 })];
           if (cell1) cell1.s = { alignment: { wrapText: true, vertical: "top" } };
-          if (cell2) cell2.s = { alignment: { wrapText: true, vertical: "top" } };
         }
 
         XLSX.utils.book_append_sheet(wb, ws, mk.label);

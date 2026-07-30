@@ -54,6 +54,7 @@ interface Stats {
   sakit: number;
   izin: number;
   dispen: number;
+  belumHadir: number;
 }
 
 interface DailyData {
@@ -315,7 +316,7 @@ export default function DashboardPage() {
   const [classList, setClassList] = useState<ClassInfo[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
-  const [stats, setStats] = useState<Stats>({ totalStudents: 0, hadir: 0, terlambat: 0, alpa: 0, sakit: 0, izin: 0, dispen: 0 });
+  const [stats, setStats] = useState<Stats>({ totalStudents: 0, hadir: 0, terlambat: 0, alpa: 0, sakit: 0, izin: 0, dispen: 0, belumHadir: 0 });
   const [weeklyData, setWeeklyData] = useState<DailyData[]>([]);
 
   // Student list modal state
@@ -505,11 +506,11 @@ const closeScanner = () => {
           else if (a.masuk_status === 'dispen') counts.dispen++;
           else if (a.masuk_status === 'alpa') counts.alpa++;
         });
-        setStats({ totalStudents: totalStudents || 0, ...counts });
+        setStats({ totalStudents: totalStudents || 0, ...counts, belumHadir: (totalStudents || 0) - (counts.hadir + counts.terlambat + counts.sakit + counts.izin + counts.dispen + counts.alpa) });
       } else {
         const { count: totalStudents } = await supabase
           .from("students").select("*", { count: "exact", head: true }).eq("status", "active");
-        setStats({ totalStudents: totalStudents || 0, hadir: 0, terlambat: 0, alpa: 0, sakit: 0, izin: 0, dispen: 0 });
+        setStats({ totalStudents: totalStudents || 0, hadir: 0, terlambat: 0, alpa: 0, sakit: 0, izin: 0, dispen: 0, belumHadir: totalStudents || 0 });
       }
 
       const prevSchoolDays = getPrevSchoolDays(5, holidayDates);
@@ -554,11 +555,11 @@ const closeScanner = () => {
           else if (a.masuk_status === 'dispen') counts.dispen++;
           else if (a.masuk_status === 'alpa') counts.alpa++;
         });
-        setStats({ totalStudents: totalStudents || 0, ...counts });
+        setStats({ totalStudents: totalStudents || 0, ...counts, belumHadir: (totalStudents || 0) - (counts.hadir + counts.terlambat + counts.sakit + counts.izin + counts.dispen + counts.alpa) });
       } else {
         const { count: totalStudents } = await supabase
           .from("students").select("*", { count: "exact", head: true }).eq("class_id", classId).eq("status", "active");
-        setStats({ totalStudents: totalStudents || 0, hadir: 0, terlambat: 0, alpa: 0, sakit: 0, izin: 0, dispen: 0 });
+        setStats({ totalStudents: totalStudents || 0, hadir: 0, terlambat: 0, alpa: 0, sakit: 0, izin: 0, dispen: 0, belumHadir: totalStudents || 0 });
       }
 
       const { data: classStudents } = await supabase
@@ -748,6 +749,7 @@ const closeScanner = () => {
     { title: "Sakit", value: stats.sakit, modalTitle: "Siswa Sakit", modalStatus: "sakit", icon: Stethoscope, color: "text-teal-600", bgColor: "bg-teal-50", cardBg: "#F0FDFA" },
     { title: "Izin", value: stats.izin, modalTitle: "Siswa Izin", modalStatus: "izin", icon: ClipboardCheck, color: "text-purple-600", bgColor: "bg-purple-50", cardBg: "#FAF5FF" },
     { title: "Dispen", value: stats.dispen, modalTitle: "Siswa Dispen", modalStatus: "dispen", icon: ClipboardCheck, color: "text-sky-600", bgColor: "bg-sky-50", cardBg: "#F0F9FF" },
+    { title: "Belum Hadir", value: stats.belumHadir, modalTitle: "Siswa Belum Hadir", modalStatus: "belum_hadir", icon: Clock, color: "text-orange-600", bgColor: "bg-orange-50", cardBg: "#FFF7ED" },
   ], [stats]);
 
   const teacherStatCards = useMemo(() => [
@@ -829,7 +831,7 @@ const closeScanner = () => {
 
       {/* Student Stats Grid */}
       {todayIsSchoolDay ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {statCards.map((card) => (
             <StatCard
               key={card.title}
@@ -844,7 +846,7 @@ const closeScanner = () => {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard title="Total Siswa" value={stats.totalStudents} icon={Users} color="text-blue-600" bgColor="bg-blue-50" cardBg="#EFF6FF" onClick={() => setStudentModal({ open: true, title: "Semua Siswa", status: null })} />
           <StatCard title="Hadir" value={0} icon={UserCheck} color="text-emerald-600" bgColor="bg-emerald-50" cardBg="#ECFDF5" onClick={() => setStudentModal({ open: true, title: "Siswa Hadir", status: "hadir" })} />
           <StatCard title="Terlambat" value={0} icon={Clock} color="text-amber-600" bgColor="bg-amber-50" cardBg="#FFFBEB" onClick={() => setStudentModal({ open: true, title: "Siswa Terlambat", status: "terlambat" })} />
@@ -852,6 +854,7 @@ const closeScanner = () => {
           <StatCard title="Sakit" value={0} icon={Stethoscope} color="text-teal-600" bgColor="bg-teal-50" cardBg="#F0FDFA" onClick={() => setStudentModal({ open: true, title: "Siswa Sakit", status: "sakit" })} />
           <StatCard title="Izin" value={0} icon={ClipboardCheck} color="text-purple-600" bgColor="bg-purple-50" cardBg="#FAF5FF" onClick={() => setStudentModal({ open: true, title: "Siswa Izin", status: "izin" })} />
           <StatCard title="Dispen" value={0} icon={ClipboardCheck} color="text-sky-600" bgColor="bg-sky-50" cardBg="#F0F9FF" onClick={() => setStudentModal({ open: true, title: "Siswa Dispen", status: "dispen" })} />
+          <StatCard title="Belum Hadir" value={stats.belumHadir} icon={Clock} color="text-orange-600" bgColor="bg-orange-50" cardBg="#FFF7ED" onClick={() => setStudentModal({ open: true, title: "Siswa Belum Hadir", status: "belum_hadir" })} />
         </div>
       )}
 

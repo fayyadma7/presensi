@@ -48,6 +48,7 @@ const CONFIG: Record<
   "Siswa Sakit": { icon: Stethoscope, color: "text-teal-600", bg: "bg-teal-50" },
   "Siswa Izin": { icon: ClipboardCheck, color: "text-purple-600", bg: "bg-purple-50" },
   "Siswa Dispen": { icon: ClipboardCheck, color: "text-sky-600", bg: "bg-sky-50" },
+  "Siswa Belum Hadir": { icon: Clock, color: "text-orange-600", bg: "bg-orange-50" },
 };
 
 const ROWS_PER_PAGE = 10;
@@ -113,6 +114,8 @@ export default function StudentListModal({
 
       if (status === 'hadir') {
         result = result.filter((s) => s.status === 'hadir' || s.status === 'terlambat');
+      } else if (status === 'belum_hadir') {
+        result = result.filter((s) => !s.status);
       } else if (status) {
         result = result.filter((s) => s.status === status);
       }

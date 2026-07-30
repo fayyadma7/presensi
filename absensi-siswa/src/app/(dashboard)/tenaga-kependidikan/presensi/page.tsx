@@ -395,7 +395,7 @@ export default function TenagaKependidikanPresensiPage() {
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Memuat lokasi...</span>
             </>
-          ) : gpsStatus === "valid" ? (
+          ) : gpsStatus === "valid" || (gpsStatus === "invalid" && hasCheckedIn) ? (
             <>
               <MapPin className="h-4 w-4 text-green-600" />
               <span className="text-green-600 font-medium">Lokasi terdeteksi</span>
@@ -568,12 +568,12 @@ export default function TenagaKependidikanPresensiPage() {
             {!isSakitOrIzin && (
               <button
                 onClick={() => {
-                  if (hasCheckedIn && !hasCheckedOut && !markingPulang && gpsStatus === "valid") setConfirmAction("pulang");
+                  if (hasCheckedIn && !hasCheckedOut && !markingPulang) setConfirmAction("pulang");
                 }}
-                disabled={!hasCheckedIn || hasCheckedOut || markingPulang || gpsStatus !== "valid" || timeDisabled}
-                title={timeDisabled ? timeDisabledReason : gpsStatus !== "valid" ? "Aktifkan GPS untuk presensi" : ""}
+                disabled={!hasCheckedIn || hasCheckedOut || markingPulang || timeDisabled}
+                title={timeDisabled ? timeDisabledReason : ""}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm ${
-                  !hasCheckedIn || hasCheckedOut || gpsStatus !== "valid" || timeDisabled
+                  !hasCheckedIn || hasCheckedOut || timeDisabled
                     ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
                     : markingPulang
                       ? "bg-amber-300 text-white cursor-wait"
