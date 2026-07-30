@@ -506,7 +506,7 @@ const closeScanner = () => {
           else if (a.masuk_status === 'dispen') counts.dispen++;
           else if (a.masuk_status === 'alpa') counts.alpa++;
         });
-        setStats({ totalStudents: totalStudents || 0, ...counts, belumHadir: (totalStudents || 0) - (counts.hadir + counts.terlambat + counts.sakit + counts.izin + counts.dispen + counts.alpa) });
+        setStats({ totalStudents: totalStudents || 0, ...counts, belumHadir: (totalStudents || 0) - (counts.hadir + counts.sakit + counts.izin + counts.dispen + counts.alpa) });
       } else {
         const { count: totalStudents } = await supabase
           .from("students").select("*", { count: "exact", head: true }).eq("status", "active");
@@ -555,7 +555,7 @@ const closeScanner = () => {
           else if (a.masuk_status === 'dispen') counts.dispen++;
           else if (a.masuk_status === 'alpa') counts.alpa++;
         });
-        setStats({ totalStudents: totalStudents || 0, ...counts, belumHadir: (totalStudents || 0) - (counts.hadir + counts.terlambat + counts.sakit + counts.izin + counts.dispen + counts.alpa) });
+        setStats({ totalStudents: totalStudents || 0, ...counts, belumHadir: (totalStudents || 0) - (counts.hadir + counts.sakit + counts.izin + counts.dispen + counts.alpa) });
       } else {
         const { count: totalStudents } = await supabase
           .from("students").select("*", { count: "exact", head: true }).eq("class_id", classId).eq("status", "active");

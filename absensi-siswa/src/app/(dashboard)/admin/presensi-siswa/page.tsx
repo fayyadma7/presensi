@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDateLocal, formatDate, countSchoolDays } from "@/lib/helpers";
+import { formatDateLocal, formatDate, countSchoolDays, getSchoolDaysInRange } from "@/lib/helpers";
 import { fetchHolidays } from "@/lib/holidays";
 import { ArrowLeft, Download, Filter, FileBarChart, CalendarDays, ChevronDown, BarChart3, Calendar as CalendarIcon, X, Loader2 } from "lucide-react";
 import SkeletonWrapper from "@/components/SkeletonWrapper";
@@ -315,8 +315,22 @@ export default function AdminPresensiSiswaPage() {
       const countMap: Record<string, Record<string, number>> = {};
       const notesMap: Record<string, string[]> = {};
       const mapelMap: Record<string, string[]> = {};
+      
+      const schoolDaysArr = getSchoolDaysInRange(startDate, endDate, holidays);
+      const schoolDays = schoolDaysArr.length;
+      
+      const presentDaysMap: Record<string, Set<string>> = {};
+      recapData.forEach(r => { presentDaysMap[r.student_id] = new Set(); });
+
       attDetail?.forEach((a: { student_id: string; date: string; masuk_status: string | null; late_status: string | null; notes: string | null }) => {
         if (!countMap[a.student_id]) countMap[a.student_id] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
+        if (!presentDaysMap[a.student_id]) presentDaysMap[a.student_id] = new Set();
+        
+        const isPresentOrExcused = ["hadir", "sakit", "izin", "dispen"].includes(a.masuk_status || "");
+        if (isPresentOrExcused) {
+          presentDaysMap[a.student_id].add(a.date);
+        }
+
         if (a.masuk_status === 'hadir') {
           countMap[a.student_id].hadir++;
           if (a.late_status === 'terlambat') countMap[a.student_id].terlambat++;
@@ -324,6 +338,7 @@ export default function AdminPresensiSiswaPage() {
         else if (a.masuk_status === 'izin') countMap[a.student_id].izin++;
         else if (a.masuk_status === 'dispen') countMap[a.student_id].dispen++;
         else if (a.masuk_status === 'alpa') countMap[a.student_id].alpa++;
+        
         if (a.masuk_status === "sakit" || a.masuk_status === "izin" || a.masuk_status === "dispen" || a.masuk_status === "alpa") {
           if (!notesMap[a.student_id]) notesMap[a.student_id] = [];
           const label = a.masuk_status === "sakit" ? "Sakit" : a.masuk_status === "izin" ? "Izin" : a.masuk_status === "dispen" ? "Dispen" : "Alpa";
@@ -332,9 +347,29 @@ export default function AdminPresensiSiswaPage() {
         }
       });
 
-      // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
+      // Add "Alpa (Tanpa Keterangan)" for school days where the student was not present
+      recapData.forEach(r => {
+        const pDays = presentDaysMap[r.student_id];
+        schoolDaysArr.forEach(sd => {
+          if (!pDays || !pDays.has(sd)) {
+            // Did not have hadir/sakit/izin/dispen on this school day
+            if (!notesMap[r.student_id]) notesMap[r.student_id] = [];
+            const hasExplicitAlpa = notesMap[r.student_id].some(note => note.startsWith(formatDate(sd)) && note.includes("Alpa"));
+            if (!hasExplicitAlpa) {
+              notesMap[r.student_id].push(`${formatDate(sd)}: Alpa`);
+            }
+          }
+        });
+        if (notesMap[r.student_id]) {
+          notesMap[r.student_id].sort((a, b) => {
+            const dateA = a.split(":")[0].trim();
+            const dateB = b.split(":")[0].trim();
+            return dateA.localeCompare(dateB);
+          });
+        }
+      });
 
-      const schoolDays = countSchoolDays(startDate, endDate, holidays);
+      // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
 
       const rows = recapData.map((r, i) => {
         const counts = countMap[r.student_id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
@@ -391,31 +426,41 @@ export default function AdminPresensiSiswaPage() {
 
       const monthCounts: Record<string, Record<string, { hadir: number; terlambat: number; sakit: number; izin: number; dispen: number; alpa: number }>> = {};
       const monthNotes: Record<string, Record<string, string[]>> = {};
+      const monthPresentDays: Record<string, Record<string, Set<string>>> = {};
 
       attDetail?.forEach((a: { student_id: string; date: string; masuk_status: string | null; late_status: string | null; notes: string | null }) => {
         const d = new Date(a.date);
         const mKey = `${d.getFullYear()}-${d.getMonth()}`;
-        if (!monthCounts[a.student_id]) monthCounts[a.student_id] = {};
-        if (!monthCounts[a.student_id][mKey]) monthCounts[a.student_id][mKey] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
+        const sId = a.student_id;
+        if (!monthCounts[sId]) monthCounts[sId] = {};
+        if (!monthCounts[sId][mKey]) monthCounts[sId][mKey] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
+        
+        if (!monthPresentDays[sId]) monthPresentDays[sId] = {};
+        if (!monthPresentDays[sId][mKey]) monthPresentDays[sId][mKey] = new Set();
+        
+        const isPresentOrExcused = ["hadir", "sakit", "izin", "dispen"].includes(a.masuk_status || "");
+        if (isPresentOrExcused) {
+          monthPresentDays[sId][mKey].add(a.date);
+        }
+
         if (a.masuk_status === 'hadir') {
-          monthCounts[a.student_id][mKey].hadir++;
-          if (a.late_status === 'terlambat') monthCounts[a.student_id][mKey].terlambat++;
-        } else if (a.masuk_status === 'sakit') monthCounts[a.student_id][mKey].sakit++;
-        else if (a.masuk_status === 'izin') monthCounts[a.student_id][mKey].izin++;
-        else if (a.masuk_status === 'dispen') monthCounts[a.student_id][mKey].dispen++;
-        else if (a.masuk_status === 'alpa') monthCounts[a.student_id][mKey].alpa++;
+          monthCounts[sId][mKey].hadir++;
+          if (a.late_status === 'terlambat') monthCounts[sId][mKey].terlambat++;
+        } else if (a.masuk_status === 'sakit') monthCounts[sId][mKey].sakit++;
+        else if (a.masuk_status === 'izin') monthCounts[sId][mKey].izin++;
+        else if (a.masuk_status === 'dispen') monthCounts[sId][mKey].dispen++;
+        else if (a.masuk_status === 'alpa') monthCounts[sId][mKey].alpa++;
+        
         if (a.masuk_status === "sakit" || a.masuk_status === "izin" || a.masuk_status === "dispen" || a.masuk_status === "alpa") {
-          if (!monthNotes[a.student_id]) monthNotes[a.student_id] = {};
-          if (!monthNotes[a.student_id][mKey]) monthNotes[a.student_id][mKey] = [];
+          if (!monthNotes[sId]) monthNotes[sId] = {};
+          if (!monthNotes[sId][mKey]) monthNotes[sId][mKey] = [];
           const label = a.masuk_status === "sakit" ? "Sakit" : a.masuk_status === "izin" ? "Izin" : a.masuk_status === "dispen" ? "Dispen" : "Alpa";
           const text = a.notes ? `${formatDate(a.date)}: ${label} - ${a.notes}` : `${formatDate(a.date)}: ${label}`;
-          monthNotes[a.student_id][mKey].push(text);
+          monthNotes[sId][mKey].push(text);
         }
       });
 
-      // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
-
-      const wb = XLSX.utils.book_new();
+      // Build month keys in range first so we can iterate over them
       const monthKeys: { key: string; label: string; year: number; month: number }[] = [];
       for (let y = yearFrom; y <= yearTo; y++) {
         const mStart = y === yearFrom ? monthFrom : 0;
@@ -425,12 +470,45 @@ export default function AdminPresensiSiswaPage() {
         }
       }
 
+      // Pre-compute school days per month for alpa calculation and auto notes
       const monthSchoolDays: Record<string, number> = {};
+      const monthSchoolDaysArrMap: Record<string, string[]> = {};
       for (const mk of monthKeys) {
-        const ms = formatDateLocal(new Date(mk.year, mk.month, 1));
-        const me = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
-        monthSchoolDays[mk.key] = countSchoolDays(ms, me, holidays);
+        const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
+        const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
+        const arr = getSchoolDaysInRange(mStart, mEnd, holidays);
+        monthSchoolDaysArrMap[mk.key] = arr;
+        monthSchoolDays[mk.key] = arr.length;
       }
+
+      // Add "Alpa" auto notes for missing presence
+      recapData.forEach(r => {
+        monthKeys.forEach(mk => {
+          const pDays = monthPresentDays[r.student_id]?.[mk.key];
+          const arr = monthSchoolDaysArrMap[mk.key];
+          arr.forEach(sd => {
+            if (!pDays || !pDays.has(sd)) {
+              if (!monthNotes[r.student_id]) monthNotes[r.student_id] = {};
+              if (!monthNotes[r.student_id][mk.key]) monthNotes[r.student_id][mk.key] = [];
+              const hasExplicitAlpa = monthNotes[r.student_id][mk.key].some(note => note.startsWith(formatDate(sd)) && note.includes("Alpa"));
+              if (!hasExplicitAlpa) {
+                monthNotes[r.student_id][mk.key].push(`${formatDate(sd)}: Alpa`);
+              }
+            }
+          });
+          if (monthNotes[r.student_id]?.[mk.key]) {
+            monthNotes[r.student_id][mk.key].sort((a, b) => {
+              const dateA = a.split(":")[0].trim();
+              const dateB = b.split(":")[0].trim();
+              return dateA.localeCompare(dateB);
+            });
+          }
+        });
+      });
+
+      // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
+      
+      const wb = XLSX.utils.book_new();
 
       for (const mk of monthKeys) {
         const schoolDays = monthSchoolDays[mk.key];

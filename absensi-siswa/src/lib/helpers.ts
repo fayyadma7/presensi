@@ -55,6 +55,18 @@ export function countSchoolDays(startDate: string, endDate: string, holidays: st
   return count;
 }
 
+export function getSchoolDaysInRange(startDate: string, endDate: string, holidays: string[]): string[] {
+  const result: string[] = [];
+  const current = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  while (current <= end) {
+    const ds = formatDateLocal(current);
+    if (isSchoolDay(ds, holidays)) result.push(ds);
+    current.setDate(current.getDate() + 1);
+  }
+  return result;
+}
+
 export function getPrevSchoolDays(n: number, holidays: string[]): string[] {
   const result: string[] = [];
   const d = new Date();
