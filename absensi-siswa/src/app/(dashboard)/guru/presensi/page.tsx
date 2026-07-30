@@ -360,6 +360,9 @@ export default function GuruPresensiPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [students, setStudents] = useState<Student[]>([]);
+  const [filterNIS, setFilterNIS] = useState("");
+  const [filterNama, setFilterNama] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [berangkatMap, setBerangkatMap] = useState<Record<string, string>>({});
   const [pulangMap, setPulangMap] = useState<Record<string, string>>({});
   const [locationMap, setLocationMap] = useState<Record<string, { lat: number; lng: number } | null>>({});
@@ -911,6 +914,20 @@ export default function GuruPresensiPage() {
   }
 
   const selectedClassName = classes.find((c) => c.id === selectedClass)?.name || "";
+
+  const filteredStudents = students.filter(student => {
+    const s_nis = student.nis?.toLowerCase() || "";
+    const s_name = student.name?.toLowerCase() || "";
+    if (filterNIS && !s_nis.includes(filterNIS.toLowerCase())) return false;
+    if (filterNama && !s_name.includes(filterNama.toLowerCase())) return false;
+    if (filterStatus && filterStatus !== "all") {
+      const status = presenceType === "berangkat" ? (berangkatMap[student.id] || "belum_hadir") : (pulangMap[student.id] || "belum_pulang");
+      if (filterStatus === "belum_hadir" && berangkatMap[student.id]) return false;
+      if (filterStatus === "belum_pulang" && pulangMap[student.id]) return false;
+      if (filterStatus !== "belum_hadir" && filterStatus !== "belum_pulang" && status !== filterStatus) return false;
+    }
+    return true;
+  });
 
   return (
     <SkeletonWrapper loading={pageLoading} skeleton={<DashboardPresensiSkeleton />}>
@@ -1473,15 +1490,39 @@ export default function GuruPresensiPage() {
                   <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-border/50">
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Lokasi</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Aksi</th>
+                        <th className="px-4 py-3 text-left">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</span>
+                            <input type="text" placeholder="Cari NIS..." value={filterNIS} onChange={(e) => setFilterNIS(e.target.value)} className="clay-input px-2 py-1 text-xs rounded-lg font-normal" />
+                          </div>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-bold text-muted-foreground uppercase">Nama</span>
+                            <input type="text" placeholder="Cari Nama..." value={filterNama} onChange={(e) => setFilterNama(e.target.value)} className="clay-input px-2 py-1 text-xs rounded-lg font-normal" />
+                          </div>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Status</span>
+                            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="clay-input px-2 py-1 text-xs rounded-lg font-normal appearance-none">
+                              <option value="all">Semua Status</option>
+                              <option value={presenceType === "berangkat" ? "belum_hadir" : "belum_pulang"}>Belum Presensi</option>
+                              <option value="hadir">Hadir</option>
+                              <option value="terlambat">Terlambat</option>
+                              <option value="sakit">Sakit</option>
+                              <option value="izin">Izin</option>
+                              <option value="dispen">Dispen</option>
+                              <option value="alpa">Alpa</option>
+                            </select>
+                          </div>
+                        </th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap align-top">Lokasi</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap align-top">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {students.map((student) => (
+                      {filteredStudents.map((student) => (
                         <StudentAttendanceRow
                           key={student.id}
                           student={student}
@@ -1495,10 +1536,10 @@ export default function GuruPresensiPage() {
                           timeDisabledReason={timeDisabledReason}
                         />
                       ))}
-                      {students.length === 0 && (
+                      {filteredStudents.length === 0 && (
                         <tr>
                           <td colSpan={5} className="text-center py-8 text-muted-foreground">
-                            Tidak ada siswa di kelas ini
+                            {students.length === 0 ? "Tidak ada siswa di kelas ini" : "Tidak ada siswa yang sesuai filter"}
                           </td>
                         </tr>
                       )}
