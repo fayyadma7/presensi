@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { School, Loader2, Eye, EyeOff } from "lucide-react";
 import DashboardContentSkeleton from "@/components/DashboardContentSkeleton";
@@ -45,21 +46,19 @@ export default function LoginPage() {
         : data?.role === "tenaga_kependidikan"
           ? "/tenaga-kependidikan/presensi"
           : "/dashboard";
-      setRedirecting(true);
+      flushSync(() => setRedirecting(true));
       requestAnimationFrame(() => router.push(destination));
     } else {
-      setRedirecting(true);
+      flushSync(() => setRedirecting(true));
       requestAnimationFrame(() => router.push("/dashboard"));
     }
   }
 
   if (redirecting) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-6 flex-1 w-full">
-          <DashboardContentSkeleton />
-        </main>
-      </div>
+      <main className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-6 w-full">
+        <DashboardContentSkeleton />
+      </main>
     );
   }
 
