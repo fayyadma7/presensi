@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, ClipboardCheck, User, LogOut, Users, Settings, GraduationCap } from "lucide-react";
+import { Home, ClipboardCheck, User, LogOut, Loader2, Users, Settings, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/helpers";
 import { useNavigationTransition } from "@/contexts/NavigationContext";
 
@@ -50,7 +50,7 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
   const pathname = usePathname();
   const router = useRouter();
   const [activePopup, setActivePopup] = useState<string | null>(null);
-  const { pendingHref, beginNavigation: beginShellNavigation } = useNavigationTransition();
+  const { pendingHref, isLoggingOut, beginNavigation: beginShellNavigation } = useNavigationTransition();
 
   const filtered = bottomNavItems.filter((item) => {
     if (!item.roles) return true;
@@ -221,12 +221,13 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
           })}
           <button
             onClick={onLogout}
-            className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] text-muted-foreground hover:text-destructive clay-transition"
+            disabled={isLoggingOut}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] text-muted-foreground hover:text-destructive clay-transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             <div className="p-2 rounded-xl bg-muted hover:bg-destructive/10 clay-transition">
-              <LogOut className="h-5 w-5" />
+              {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
             </div>
-            <span className="text-[10px] font-bold">Keluar</span>
+            <span className="text-[10px] font-bold">{isLoggingOut ? "Keluar..." : "Keluar"}</span>
           </button>
         </div>
       </nav>

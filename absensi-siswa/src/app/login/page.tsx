@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { School, Loader2, Eye, EyeOff } from "lucide-react";
-import { ContentSkeleton } from "@/components/DashboardShell";
+import DashboardContentSkeleton from "@/components/DashboardContentSkeleton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-6 flex-1 w-full">
-          <ContentSkeleton />
+          <DashboardContentSkeleton />
         </main>
       </div>
     );

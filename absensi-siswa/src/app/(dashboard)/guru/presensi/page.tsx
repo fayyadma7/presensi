@@ -186,135 +186,55 @@ const StudentAttendanceRow = memo(function StudentAttendanceRow({
     );
   }
 
-  if (!berangkatStatus) {
-    return (
-      <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-        <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">{student.nis}</td>
-        <td className="px-4 py-3 font-medium">{student.name}</td>
-        <td className="px-4 py-3">
-          <span className="clay-badge px-2 py-0.5 text-xs font-bold bg-muted text-muted-foreground whitespace-nowrap">
-Belum Presensi Masuk
-          </span>
-        </td>
-        <td className="px-4 py-3 text-center text-xs text-muted-foreground">-</td>
-        <td className="px-4 py-3 text-right">
-          <div className="flex gap-1 justify-end">
-            {(["sakit", "izin", "dispen", "alpa"] as const).map((st) => {
-              const isAlpa = st === "alpa";
-              const isDisabled = isAlpa ? htDisabled : buttonsDisabled;
-              const title = holidayDisabled ? "Hari ini libur" : (isAlpa && timeDisabled ? timeDisabledReason || "Di luar jam presensi" : "");
-              return (
-                <button
-                  key={st}
-                  onClick={() => onMark(student.id, st)}
-                  disabled={isDisabled}
-                  title={title}
-                  className={`w-7 h-7 rounded-xl text-[11px] font-bold clay-transition ${
-                    isDisabled
-                      ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
-                      : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                  }`}
-                >
-                  {st === "sakit" ? "S" : st === "izin" ? "I" : st === "dispen" ? "D" : "A"}
-                </button>
-              );
-            })}
-          </div>
-        </td>
-      </tr>
-    );
-  }
-
-  if (berangkatStatus === "sakit" || berangkatStatus === "izin" || berangkatStatus === "dispen") {
-    return (
-      <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-        <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">{student.nis}</td>
-        <td className="px-4 py-3 font-medium">{student.name}</td>
-        <td className="px-4 py-3">
-          <span className={`clay-badge px-2 py-0.5 text-xs font-bold whitespace-nowrap ${variants[berangkatStatus]}`}>
-            {labels[berangkatStatus]}
-          </span>
-        </td>
-        <td className="px-4 py-3 text-right">
-          <span className="text-xs text-muted-foreground">-</span>
-        </td>
-      </tr>
-    );
-  }
-
-  if (berangkatStatus === "alpa") {
-    return (
-      <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-        <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">{student.nis}</td>
-        <td className="px-4 py-3 font-medium">{student.name}</td>
-        <td className="px-4 py-3">
-          <span className={`clay-badge px-2 py-0.5 text-xs font-bold whitespace-nowrap ${variants.alpa}`}>
-            Alpa
-          </span>
-        </td>
-        <td className="px-4 py-3 text-right">
-          <div className="flex gap-1 justify-end">
-            {(["sakit", "izin", "dispen", "alpa"] as const).map((st) => {
-              const isAlpa = st === "alpa";
-              const isDisabled = isAlpa ? htDisabled : buttonsDisabled;
-              const title = holidayDisabled ? "Hari ini libur" : (isAlpa && timeDisabled ? timeDisabledReason || "Di luar jam presensi" : "");
-              return (
-                <button
-                  key={st}
-                  onClick={() => onMark(student.id, st)}
-                  disabled={isDisabled}
-                  title={title}
-                  className={`w-7 h-7 rounded-xl text-[11px] font-bold clay-transition ${
-                    isDisabled
-                      ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
-                      : pulangStatus === st
-                        ? "bg-primary text-primary-foreground shadow-[0_2px_8px rgba(79,70,229,0.3)]"
-                        : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary cursor-pointer"
-                  }`}
-                >
-                  {st === "sakit" ? "S" : st === "izin" ? "I" : st === "dispen" ? "D" : "A"}
-                </button>
-              );
-            })}
-          </div>
-        </td>
-      </tr>
-    );
-  }
-
-  const displayStatus = pulangStatus ? "Sudah Pulang" : "Belum Pulang";
-  const badgeClass = pulangStatus
-    ? "bg-success/10 text-success border-2 border-success/20"
-    : "bg-muted text-muted-foreground";
+  const isPresentAtSchool = berangkatStatus === "hadir" || berangkatStatus === "terlambat";
+  const hasCheckedOut = pulangStatus === "pulang";
+  const pulangDisabled = holidayDisabled || !isPresentAtSchool || hasCheckedOut;
+  const pulangTitle = holidayDisabled
+    ? "Hari ini libur"
+    : !isPresentAtSchool
+      ? "Pulang hanya dapat dicatat untuk siswa yang hadir di sekolah"
+      : hasCheckedOut
+        ? "Siswa sudah presensi pulang"
+        : "Catat presensi pulang";
+  const displayStatus = isPresentAtSchool
+    ? hasCheckedOut ? "Sudah Pulang" : "Belum Pulang"
+    : berangkatStatus ? labels[berangkatStatus] || berangkatStatus : "Belum Presensi Masuk";
+  const badgeClass = isPresentAtSchool
+    ? hasCheckedOut
+      ? "bg-primary text-primary-foreground border-2 border-primary shadow-[0_2px_8px_rgba(79,70,229,0.3)]"
+      : "bg-muted text-muted-foreground"
+    : variants[berangkatStatus || ""] || "bg-muted text-muted-foreground";
 
   return (
     <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
       <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">{student.nis}</td>
       <td className="px-4 py-3 font-medium">{student.name}</td>
-        <td className="px-4 py-3">
-          <span className={`clay-badge px-2 py-0.5 text-xs font-bold whitespace-nowrap ${badgeClass}`}>
-            {displayStatus}
-          </span>
-        </td>
-        <td className="px-4 py-3 text-center whitespace-nowrap">
-          {location ? (
-            <a href={`https://www.google.com/maps?q=${location.lat},${location.lng}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:underline">
-              Lihat Lokasi
-            </a>
-          ) : (
-            <span className="text-xs text-muted-foreground">-</span>
-          )}
-        </td>
-        <td className="px-4 py-3 text-right">
+      <td className="px-4 py-3">
+        <span className={`clay-badge px-2 py-0.5 text-xs font-bold whitespace-nowrap ${badgeClass}`}>
+          {displayStatus}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-center whitespace-nowrap">
+        {isPresentAtSchool && location ? (
+          <a href={`https://www.google.com/maps?q=${location.lat},${location.lng}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:underline">
+            Lihat Lokasi
+          </a>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right">
         <div className="flex gap-1 justify-end">
           <button
             onClick={() => onMark(student.id, "hadir")}
-            disabled={!!pulangStatus || htDisabled}
-            title={holidayDisabled ? "Hari ini libur" : (timeDisabled ? timeDisabledReason || "Di luar jam presensi" : "")}
+            disabled={pulangDisabled}
+            title={pulangTitle}
             className={`w-7 h-7 rounded-xl text-[11px] font-bold clay-transition ${
-              pulangStatus || htDisabled
-                ? "bg-success/10 text-success cursor-not-allowed opacity-50"
-                : "bg-primary text-primary-foreground shadow-[0_2px_8px rgba(79,70,229,0.3)] cursor-pointer"
+              hasCheckedOut
+                ? "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(79,70,229,0.3)] cursor-not-allowed opacity-70"
+                : pulangDisabled
+                  ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
+                  : "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(79,70,229,0.3)] cursor-pointer"
             }`}
           >
             P
@@ -323,6 +243,8 @@ Belum Presensi Masuk
       </td>
     </tr>
   );
+
+
 });
 
 function DashboardPresensiSkeleton() {
@@ -822,7 +744,9 @@ export default function GuruPresensiPage() {
       const locationLng = cachedPosition?.lng ?? null;
       const nowISO = new Date().toISOString();
 
-      if (presenceType === "pulang" && !berangkatMap[studentId]) {
+      const canMarkPulang = berangkatMap[studentId] === "hadir" || berangkatMap[studentId] === "terlambat";
+      if (presenceType === "pulang" && (!canMarkPulang || pulangMap[studentId] === "pulang")) {
+        toast.info("Presensi pulang hanya dapat dicatat sekali untuk siswa yang hadir di sekolah.");
         return;
       }
 
@@ -861,27 +785,11 @@ export default function GuruPresensiPage() {
           toast.error("Gagal menyimpan kehadiran. Coba lagi.");
         } else {
           toast.success("Kehadiran berhasil ditandai.");
-          // Tambah log presensi kehadiran siswa
-          try {
-            const logEntry = {
-              action: "pulang",
-              source: "Wali Kelas",
-              by: currentTeacherName || teacherName || "Guru",
-              time: nowISO,
-            };
-            await supabase.rpc("append_attendance_log", {
-              p_student_id: studentId,
-              p_date: today,
-              p_log_entry: logEntry,
-            });
-          } catch (e) {
-            console.warn("Attendance log append skipped (best-effort):", e);
-          }
         }
       }
       fetchStudents();
     },
-    [supabase, presenceType, cachedPosition, berangkatMap, todayIsSchoolDay, currentTeacherName, teacherName]
+    [supabase, presenceType, cachedPosition, berangkatMap, pulangMap, todayIsSchoolDay, currentTeacherName, teacherName]
   );
 
   async function markTeacherStatus(schedule: SubjectSchedule, status: string) {

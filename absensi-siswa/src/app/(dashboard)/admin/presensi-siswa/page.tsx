@@ -31,6 +31,45 @@ interface RecapData {
   alpa: number;
 }
 
+const DAILY_LOG_ACTIONS = new Set(["hadir", "terlambat", "sakit", "izin", "dispen", "alpa"]);
+
+function formatLogTime(value: unknown) {
+  if (typeof value !== "string") return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDailyAttendanceLog(log: unknown) {
+  if (!Array.isArray(log)) return "-";
+  const entries = log.filter((entry: any) => DAILY_LOG_ACTIONS.has(entry?.action));
+  if (entries.length === 0) return "-";
+
+  return entries.map((entry: any) => {
+    const action = String(entry.action).charAt(0).toUpperCase() + String(entry.action).slice(1);
+    const actor = entry.source === "Mandiri"
+      ? "Siswa"
+      : entry.source === "Wali Kelas"
+        ? `Guru${entry.by ? ` (${entry.by})` : ""}`
+        : entry.source === "Scan Barcode"
+          ? "Guru (scan barcode)"
+          : entry.source || "-";
+    const time = formatLogTime(entry.time);
+    return `${time ? `${time} — ` : ""}${action} oleh ${actor}`;
+  }).join("\n");
+}
+
+function formatSubjectAttendanceLog(log: unknown) {
+  if (!Array.isArray(log) || log.length === 0) return "-";
+  return log.map((entry: any) => {
+    const status = String(entry?.status || "-");
+    const label = status.charAt(0).toUpperCase() + status.slice(1);
+    const teacher = entry?.teacher_name || "Guru";
+    const time = formatLogTime(entry?.time);
+    return `${time ? `${time} — ` : ""}${label} oleh ${teacher}`;
+  }).join("\n");
+}
+
 function PresensiSiswaSkeleton() {
   return (
     <div className="space-y-6">
@@ -227,14 +266,14 @@ export default function AdminPresensiSiswaPage() {
 
       const { data: attData } = await supabase
         .from("attendance")
-        .select("student_id, masuk_status, location_lat, location_lng")
+        .select("student_id, masuk_status, late_status, location_lat, location_lng, log")
         .eq("date", today)
         .in("student_id", studentIds);
 
-      const attMap: Record<string, { status: string; lat: number | null; lng: number | null }> = {};
-      attData?.forEach((a: { student_id: string; masuk_status: string | null; location_lat: number | null; location_lng: number | null }) => {
+      const attMap: Record<string, { status: string; lateStatus: string | null; lat: number | null; lng: number | null; log: unknown }> = {};
+      attData?.forEach((a: { student_id: string; masuk_status: string | null; late_status: string | null; location_lat: number | null; location_lng: number | null; log: unknown }) => {
         if (a.masuk_status && !attMap[a.student_id]) {
-          attMap[a.student_id] = { status: a.masuk_status, lat: a.location_lat, lng: a.location_lng };
+          attMap[a.student_id] = { status: a.masuk_status, lateStatus: a.late_status, lat: a.location_lat, lng: a.location_lng, log: a.log };
         }
       });
 
@@ -246,16 +285,7 @@ export default function AdminPresensiSiswaPage() {
 
       const subjectAttMap: Record<string, string> = {};
       subjectAttData?.forEach((sa: any) => {
-        if (sa.log && Array.isArray(sa.log)) {
-          const teacherMap: Record<string, string> = {};
-          sa.log.forEach((l: any) => {
-            teacherMap[l.teacher_name] = l.status;
-          });
-          const summary = Object.entries(teacherMap)
-            .map(([tName, tStatus]) => `${tName}: ${tStatus === "hadir" ? "H" : tStatus === "terlambat" ? "T" : tStatus === "sakit" ? "S" : tStatus === "izin" ? "I" : tStatus === "dispen" ? "D" : tStatus === "tidak_hadir" ? "TH" : "A"}`)
-            .join(", ");
-          subjectAttMap[sa.student_id] = summary;
-        }
+        subjectAttMap[sa.student_id] = formatSubjectAttendanceLog(sa.log);
       });
 
       const classIdMap: Record<string, string> = {};
@@ -277,15 +307,31 @@ export default function AdminPresensiSiswaPage() {
           const statusMap: Record<string, string> = {
             hadir: "Hadir", terlambat: "Terlambat", sakit: "Sakit", izin: "Izin", dispen: "Dispen", alpa: "Alpa",
           };
-          statusKehadiran = statusMap[att.status] || att.status;
+          statusKehadiran = att.lateStatus === "terlambat" ? "Terlambat" : statusMap[att.status] || att.status;
           if (att.lat && att.lng) lokasi = `https://www.google.com/maps?q=${att.lat},${att.lng}`;
         }
-        return { No: i + 1, NIS: s.nis, Nama: s.name, Kelas: className, "Status Kehadiran": statusKehadiran, "Log Presensi Mapel": subjectAttMap[s.id] || "-", "Detail Lokasi Presensi Masuk": lokasi };
+        return {
+          No: i + 1,
+          NIS: s.nis,
+          Nama: s.name,
+          Kelas: className,
+          "Status Kehadiran": statusKehadiran,
+          "Log Presensi Harian": formatDailyAttendanceLog(att?.log),
+          "Log Presensi Mapel": subjectAttMap[s.id] || "-",
+          "Detail Lokasi Presensi Masuk": lokasi,
+        };
       });
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows);
-      ws["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 18 }, { wch: 30 }, { wch: 50 }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 12 }, { wch: 22 }, { wch: 14 }, { wch: 18 }, { wch: 42 }, { wch: 42 }, { wch: 50 }];
+      const dailyRange = XLSX.utils.decode_range(ws["!ref"] || "A1");
+      for (let row = dailyRange.s.r + 1; row <= dailyRange.e.r; row++) {
+        for (const col of [5, 6]) {
+          const cell = ws[XLSX.utils.encode_cell({ r: row, c: col })];
+          if (cell) cell.s = { alignment: { wrapText: true, vertical: "top" } };
+        }
+      }
       XLSX.utils.book_append_sheet(wb, ws, "Presensi Harian");
       XLSX.writeFile(wb, `presensi-harian-${today}.xlsx`);
       toast.success("File Excel berhasil diunduh!");

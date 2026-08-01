@@ -16,8 +16,10 @@ import {
   QrCode,
   User,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/helpers";
+import { useNavigationTransition } from "@/contexts/NavigationContext";
 
 type NavItemLink = {
   type: "link";
@@ -59,6 +61,7 @@ export default function Navbar() {
   const router = useRouter();
   const supabase = createClient();
   const { userName, userRole, isWaliKelas } = useAuth();
+  const { isLoggingOut, beginLogout } = useNavigationTransition();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +76,7 @@ export default function Navbar() {
   }, []);
 
   async function handleLogout() {
+    beginLogout();
     await supabase.auth.signOut();
     router.push("/login");
   }
@@ -192,10 +196,11 @@ export default function Navbar() {
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer clay-transition focus:outline-none focus:ring-2 focus:ring-destructive/20"
+                disabled={isLoggingOut}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer clay-transition focus:outline-none focus:ring-2 focus:ring-destructive/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <LogOut className="h-4 w-4" />
-                Logout
+                {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+                {isLoggingOut ? "Keluar..." : "Logout"}
               </button>
             </div>
           </div>

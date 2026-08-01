@@ -268,6 +268,13 @@ export default function SiswaPresensiPage() {
   }, [fetchHistory]);
 
   const handleSubmit = useCallback(async (type: "masuk" | "pulang" | "sakit" | "izin", alasan?: string) => {
+    if (!navigator.onLine) {
+      const message = "Tidak ada koneksi internet. Presensi belum tercatat. Sambungkan internet lalu coba kembali.";
+      setResult({ success: false, message });
+      toast.error(message);
+      return;
+    }
+
     if (!todayIsSchoolDay) {
       setResult({ success: false, message: "Hari ini hari libur. Presensi tidak tersedia." });
       return;
@@ -305,6 +312,9 @@ export default function SiswaPresensiPage() {
     else if (type === "sakit") setMarkingSakit(true);
     else if (type === "izin") setMarkingIzin(true);
 
+    const requestController = new AbortController();
+    const requestTimeout = window.setTimeout(() => requestController.abort(), 20000);
+
     try {
       if (!userId) {
         setResult({ success: false, message: "Session expired. Silakan login ulang." });
@@ -336,12 +346,14 @@ export default function SiswaPresensiPage() {
       }
 
       // Check duplicate and fetch existing record id in one query
-      const { data: existingRec } = await supabase
+      const { data: existingRec, error: existingError } = await supabase
         .from("attendance")
         .select("id, masuk_status, pulang_status")
         .eq("student_id", userId)
         .eq("date", today)
+        .abortSignal(requestController.signal)
         .maybeSingle();
+      if (existingError) throw existingError;
 
       if (type === "masuk") {
         if (existingRec?.masuk_status) {
@@ -390,7 +402,8 @@ export default function SiswaPresensiPage() {
         const result = await supabase
           .from("attendance")
           .update(updatePayload)
-          .eq("id", existingRec.id);
+          .eq("id", existingRec.id)
+          .abortSignal(requestController.signal);
         error = result.error;
       } else {
         // Insert new row
@@ -415,7 +428,8 @@ export default function SiswaPresensiPage() {
 
         const result = await supabase
           .from("attendance")
-          .insert(insertPayload);
+          .insert(insertPayload)
+          .abortSignal(requestController.signal);
         error = result.error;
       }
 
@@ -426,29 +440,42 @@ export default function SiswaPresensiPage() {
         return;
       }
 
-      // Tambah log presensi kehadiran siswa (best-effort)
-      try {
-        const logEntry = {
-          action: type === "masuk" ? (lateStatus === "terlambat" ? "terlambat" : "hadir") : type,
-          source: "Mandiri",
-          time: nowISO,
-        };
-        await supabase.rpc("append_attendance_log", {
-          p_student_id: userId,
-          p_date: today,
-          p_log_entry: logEntry,
-        });
-      } catch (e) {
-        console.warn("Attendance log append skipped (best-effort):", e);
+      // Log harian hanya mencatat presensi masuk, bukan event pulang.
+      if (type !== "pulang") {
+        try {
+          const logEntry = {
+            action: type === "masuk" ? (lateStatus === "terlambat" ? "terlambat" : "hadir") : type,
+            source: "Mandiri",
+            time: nowISO,
+          };
+          await supabase.rpc("append_attendance_log", {
+            p_student_id: userId,
+            p_date: today,
+            p_log_entry: logEntry,
+          });
+        } catch (e) {
+          console.warn("Attendance log append skipped (best-effort):", e);
+        }
       }
 
       // Refresh today's record
-      const { data: updated } = await supabase
+      const { data: updated, error: verificationError } = await supabase
         .from("attendance")
         .select("masuk_status, late_status, masuk_time, pulang_status, pulang_time, created_at")
         .eq("student_id", userId)
         .eq("date", today)
+        .abortSignal(requestController.signal)
         .maybeSingle();
+      const isRecorded = type === "pulang"
+        ? updated?.pulang_status === "pulang"
+        : updated?.masuk_status === dbStatus;
+      if (verificationError || !isRecorded) {
+        console.error("Attendance verification error:", verificationError);
+        const message = "Presensi belum dapat dikonfirmasi tersimpan. Periksa koneksi dan cek riwayat sebelum mencoba lagi.";
+        setResult({ success: false, message });
+        toast.error(message);
+        return;
+      }
       setTodayRecord(updated || null);
 
       // Refresh history paginasi
@@ -457,7 +484,15 @@ export default function SiswaPresensiPage() {
       const label = type === "masuk" ? "masuk" : type;
       setResult({ success: true, message: `Presensi ${label} berhasil dicatat!` });
       toast.success(`Presensi ${label} berhasil dicatat!`);
+    } catch (error) {
+      console.error("Attendance submission failed:", error);
+      const message = requestController.signal.aborted || !navigator.onLine || error instanceof TypeError
+        ? "Koneksi internet bermasalah. Presensi belum tercatat. Periksa sinyal lalu coba kembali."
+        : "Presensi gagal dicatat. Silakan coba kembali dan pastikan koneksi stabil.";
+      setResult({ success: false, message });
+      toast.error(message);
     } finally {
+      window.clearTimeout(requestTimeout);
       setSubmitting(false);
       if (type === "masuk") setMarkingMasuk(false);
       else if (type === "pulang") setMarkingPulang(false);

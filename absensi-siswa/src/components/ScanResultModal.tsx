@@ -212,19 +212,21 @@ export default function ScanResultModal({
       return;
     }
 
-    try {
-      const logEntry = {
-        action: autoStatus,
-        source: "Scan Barcode",
-        time: nowISO
-      };
-      await supabase.rpc("append_attendance_log", {
-        p_student_id: student.id,
-        p_date: today,
-        p_log_entry: logEntry,
-      });
-    } catch (e) {
-      console.warn("Attendance log append skipped (best-effort):", e);
+    if (autoStatus !== "pulang") {
+      try {
+        const logEntry = {
+          action: autoStatus,
+          source: "Scan Barcode",
+          time: nowISO
+        };
+        await supabase.rpc("append_attendance_log", {
+          p_student_id: student.id,
+          p_date: today,
+          p_log_entry: logEntry,
+        });
+      } catch (e) {
+        console.warn("Attendance log append skipped (best-effort):", e);
+      }
     }
 
     playSuccessSound();

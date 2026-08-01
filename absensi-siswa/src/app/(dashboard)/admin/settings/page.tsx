@@ -88,6 +88,7 @@ export default function SettingsPage() {
   const [newHolidayEnd, setNewHolidayEnd] = useState("");
   const [newHolidayName, setNewHolidayName] = useState("");
   const [holidayError, setHolidayError] = useState("");
+  const [holidayLoadError, setHolidayLoadError] = useState("");
   const [syncingHolidays, setSyncingHolidays] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
@@ -181,17 +182,20 @@ export default function SettingsPage() {
 
   async function fetchHolidays() {
     try {
+      setHolidayLoadError("");
       const year = new Date().getFullYear();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("holidays")
         .select("id, date, name, source")
         .gte("date", `${year}-01-01`)
         .lte("date", `${year}-12-31`)
         .order("date");
+      if (error) throw error;
       setHolidays(data || []);
     } catch (err) {
       console.error("[Holidays] Error:", err);
       setHolidays([]);
+      setHolidayLoadError("Daftar hari libur gagal dimuat. Periksa policy akses tabel holidays di Supabase.");
     }
   }
 
@@ -535,6 +539,7 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground">Isi <strong>Tanggal Selesai</strong> untuk cuti bersama beberapa hari. Kosongkan untuk 1 hari saja.</p>
           </div>
           {holidayError && <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2 text-sm font-medium text-destructive mb-4">{holidayError}</div>}
+          {holidayLoadError && <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2 text-sm font-medium text-destructive mb-4">{holidayLoadError}</div>}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[320px] overflow-y-auto pr-1">
             {holidays.map((h) => (

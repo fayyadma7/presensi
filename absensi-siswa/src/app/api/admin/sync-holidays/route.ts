@@ -34,10 +34,12 @@ export async function GET(req: NextRequest) {
     const res = await fetch(`${TALLYFY_API}/${year}.json`);
     if (res.ok) {
       const data = await res.json();
-      apiHolidays = data.holidays || [];
+      apiHolidays = Array.isArray(data) ? data : data.holidays || [];
+    } else {
+      return NextResponse.json({ error: "Sumber hari libur tidak dapat diakses" }, { status: 502 });
     }
   } catch {
-    // API failed
+    return NextResponse.json({ error: "Sumber hari libur tidak dapat diakses" }, { status: 502 });
   }
 
   // 2. Get existing dates from DB
@@ -55,16 +57,19 @@ export async function GET(req: NextRequest) {
     .map((h) => ({ date: h.date, name: h.local_name || h.name, source: "api" as const }));
 
   if (toInsert.length > 0) {
-    await supabase.from("holidays").upsert(toInsert, { onConflict: "date" });
+    const { error } = await supabase.from("holidays").upsert(toInsert, { onConflict: "date" });
+    if (error) return NextResponse.json({ error: `Gagal menyimpan hari libur: ${error.message}` }, { status: 500 });
   }
 
   // 4. Return all holidays for this year
-  const { data: allHolidays } = await supabase
+  const { data: allHolidays, error: readError } = await supabase
     .from("holidays")
     .select("id, date, name, source")
     .gte("date", `${year}-01-01`)
     .lte("date", `${year}-12-31`)
     .order("date");
+
+  if (readError) return NextResponse.json({ error: `Gagal membaca hari libur: ${readError.message}` }, { status: 500 });
 
   return NextResponse.json({ holidays: allHolidays || [], synced: toInsert.length });
 }

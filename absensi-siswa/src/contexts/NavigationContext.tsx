@@ -6,12 +6,16 @@ import { flushSync } from "react-dom";
 
 type NavigationContextValue = {
   pendingHref: string | null;
+  isLoggingOut: boolean;
   beginNavigation: (href: string) => void;
+  beginLogout: () => void;
 };
 
 const NavigationContext = createContext<NavigationContextValue>({
   pendingHref: null,
+  isLoggingOut: false,
   beginNavigation: () => {},
+  beginLogout: () => {},
 });
 
 function getRouteKey(href: string) {
@@ -23,6 +27,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const currentRouteKey = `${pathname}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
 
   useEffect(() => {
@@ -33,10 +38,14 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({
     pendingHref,
+    isLoggingOut,
     beginNavigation: (href: string) => {
       flushSync(() => setPendingHref(href));
     },
-  }), [pendingHref]);
+    beginLogout: () => {
+      flushSync(() => setIsLoggingOut(true));
+    },
+  }), [isLoggingOut, pendingHref]);
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
 }
