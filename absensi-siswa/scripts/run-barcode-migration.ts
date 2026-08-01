@@ -1,11 +1,23 @@
 // Run raw SQL migration via Supabase REST API
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
 
-dotenv.config({ path: '.env.local' });
+const envPath = path.join(__dirname, '..', '.env.local');
+const envRaw = fs.readFileSync(envPath, 'utf-8');
+const envVars: Record<string, string> = {};
+envRaw.split('\n').forEach((line) => {
+  const idx = line.indexOf('=');
+  if (idx > 0) envVars[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+});
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = envVars.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = envVars.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error('GAGAL: NEXT_PUBLIC_SUPABASE_URL atau SUPABASE_SERVICE_ROLE_KEY tidak ditemukan di .env.local');
+  process.exit(1);
+}
 
 // Use raw fetch to call PostgREST with raw SQL
 async function runRawSQL(sql: string) {
