@@ -3,7 +3,6 @@
 import { useEffect, useState, memo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonCard, SkeletonForm } from "@/components/skeleton";
 import { CheckCircle, XCircle, Clock, QrCode, User, Key, Lock, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -150,7 +149,7 @@ export default function SiswaProfilPage() {
   };
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<SiswaProfilSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -245,6 +244,6 @@ export default function SiswaProfilPage() {
         </form>
       </div>
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

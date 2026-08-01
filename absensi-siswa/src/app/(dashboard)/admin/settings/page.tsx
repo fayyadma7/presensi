@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { formatDateLocal } from "@/lib/helpers";
 import { Save, Loader2, School, Clock, MapPin, Users, Settings, Plus, Pencil, Trash2, CalendarOff, Navigation, BookOpen } from "lucide-react";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonCard } from "@/components/skeleton";
 import dynamic from "next/dynamic";
+import { useNavigationTransition } from "@/contexts/NavigationContext";
 
 const MapPicker = dynamic(() => import("@/components/MapPicker"), { ssr: false });
 
@@ -66,6 +67,8 @@ function SettingsSkeleton() {
 
 export default function SettingsPage() {
   const supabase = createClient();
+  const router = useRouter();
+  const { beginNavigation } = useNavigationTransition();
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<SettingsData>({
     school_name: "", morning_start: "06:30", late_threshold: "07:00",
@@ -262,7 +265,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<SettingsSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -302,6 +305,13 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground mt-1">Kelola mata pelajaran, guru pengampu, dan jadwal pelajaran</p>
               <Link
                 href="/admin/pengaturan-presensi-mapel"
+                onPointerDown={() => router.prefetch("/admin/pengaturan-presensi-mapel")}
+                onMouseEnter={() => router.prefetch("/admin/pengaturan-presensi-mapel")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  router.push("/admin/pengaturan-presensi-mapel");
+                  beginNavigation("/admin/pengaturan-presensi-mapel");
+                }}
                 className="clay-button inline-flex items-center justify-center text-center px-5 py-2.5 mt-4 text-white font-bold text-sm rounded-xl cursor-pointer"
               >
                 Pengaturan Presensi Mapel
@@ -543,6 +553,6 @@ export default function SettingsPage() {
         </div>
       </div>
       </div>
-    </SkeletonWrapper>
+    </>
   );
 }

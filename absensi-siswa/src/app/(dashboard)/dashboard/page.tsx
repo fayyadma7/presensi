@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Skeleton, SkeletonStats, SkeletonChart, SkeletonTable } from "@/components/skeleton";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { fetchHolidays, getHolidayName } from "@/lib/holidays";
 import { isSchoolDay, getPrevSchoolDays, isTodaySchoolDay, formatDateLocal } from "@/lib/helpers";
 import StudentListModal from "@/components/StudentListModal";
@@ -777,7 +776,7 @@ const closeScanner = () => {
   );
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<DashboardSkeleton />}>
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -1192,6 +1191,6 @@ const closeScanner = () => {
         readOnly={true}
       />
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

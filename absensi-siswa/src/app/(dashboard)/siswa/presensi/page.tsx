@@ -9,7 +9,6 @@ import { getCurrentPosition, getGPSErrorMessage, isWithinSchool } from "@/lib/ge
 import { CheckCircle, Clock, Calendar, Loader2, MapPin, MapPinOff, CalendarOff, HeartPulse, FileText, AlertCircle, IdCard, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import BarcodeDisplay from "@/components/BarcodeDisplay";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/skeleton";
 
 interface StudentInfo {
@@ -468,7 +467,7 @@ export default function SiswaPresensiPage() {
   }, [supabase, cachedPosition, todayRecord, todayIsSchoolDay, gpsStatus, userId, timeWindow, isMasukTime, isPulangTime, geofenceValid, timeDisabled, timeDisabledReason, fetchHistory]);
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<PresensiSkeleton />}>
+    <>
       <div className="space-y-6">
       <div className="flex items-center gap-3">
         <div className="p-3 bg-indigo-100 rounded-2xl">
@@ -965,6 +964,6 @@ export default function SiswaPresensiPage() {
         </div>
       )}
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

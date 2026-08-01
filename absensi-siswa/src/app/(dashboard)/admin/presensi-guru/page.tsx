@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Users, Clock, CheckCircle, XCircle, Calendar, RefreshCw, CalendarOff, ArrowLeft, Download, Filter, CalendarDays, BarChart3, ChevronDown, X } from "lucide-react";
 import { formatDate, formatTime, countSchoolDays, isSchoolDay, formatDateLocal } from "@/lib/helpers";
 import { fetchHolidays } from "@/lib/holidays";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -416,7 +415,7 @@ export default function AdminPresensiGuruPage() {
   }
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<PresensiGuruSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -765,6 +764,6 @@ export default function AdminPresensiGuruPage() {
         </div>
       )}
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

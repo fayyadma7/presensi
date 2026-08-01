@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { formatDateLocal } from "@/lib/helpers";
 import { Plus, Pencil, Trash2, Search, GraduationCap, Download, Upload, FileBarChart, ChevronDown, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import dynamic from "next/dynamic";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -289,7 +288,7 @@ export default function TeachersPage() {
   const totalPages = Math.max(1, Math.ceil(totalTeachers / ITEMS_PER_PAGE));
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<TeachersSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -469,6 +468,6 @@ export default function TeachersPage() {
         </div>
       )}
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

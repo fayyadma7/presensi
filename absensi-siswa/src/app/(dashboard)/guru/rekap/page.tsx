@@ -10,7 +10,6 @@ import dynamic from "next/dynamic";
 import { SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 
 
 
@@ -632,7 +631,7 @@ export default function RekapPage() {
 
 
   return (
-    <SkeletonWrapper loading={loading && recapData.length === 0} skeleton={<RekapSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -849,6 +848,6 @@ export default function RekapPage() {
         </div>
       )}
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

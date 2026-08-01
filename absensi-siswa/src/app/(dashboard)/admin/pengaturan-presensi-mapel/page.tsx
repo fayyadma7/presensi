@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { flushSync } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
@@ -18,7 +19,6 @@ import {
   Upload,
   Loader2,
 } from "lucide-react";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { SkeletonTable } from "@/components/skeleton";
 import Pagination from "@/components/shared/ui/Pagination";
 
@@ -85,11 +85,23 @@ function PageSkeleton() {
   );
 }
 
+function TabSwitchSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse" aria-busy="true" aria-label="Memuat tab pengaturan presensi">
+      <div className="clay-card h-20 p-5"><div className="h-5 w-48 rounded bg-muted" /><div className="mt-3 h-3 w-64 max-w-full rounded bg-muted" /></div>
+      <div className="clay-card h-72 p-5"><div className="h-5 w-40 rounded bg-muted" /><div className="mt-5 h-48 rounded-2xl bg-muted" /></div>
+    </div>
+  );
+}
+
 export default function PengaturanPresensiMapelPage() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "mapel";
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const visibleTab = pendingTab ?? tab;
+  const isTabSwitching = pendingTab !== null;
 
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -175,6 +187,10 @@ export default function PengaturanPresensiMapelPage() {
   }, [tab, fetchTeacherSubjects, fetchSchedules]);
 
   useEffect(() => {
+    if (pendingTab === tab) setPendingTab(null);
+  }, [pendingTab, tab]);
+
+  useEffect(() => {
     setPengampuPage(1);
   }, [selectedClass]);
 
@@ -183,7 +199,11 @@ export default function PengaturanPresensiMapelPage() {
   }, [selectedClass]);
 
   function switchTab(t: string) {
-    router.push(`/admin/pengaturan-presensi-mapel?tab=${t}`);
+    if (isTabSwitching || t === tab) return;
+
+    flushSync(() => setPendingTab(t));
+    router.prefetch(`/admin/pengaturan-presensi-mapel?tab=${t}`);
+    requestAnimationFrame(() => router.push(`/admin/pengaturan-presensi-mapel?tab=${t}`));
   }
 
   function getDayName(d: number) {
@@ -697,7 +717,7 @@ export default function PengaturanPresensiMapelPage() {
   const paginatedSchedules = filteredSchedules.slice((jadwalPage - 1) * ROWS_PER_PAGE, jadwalPage * ROWS_PER_PAGE);
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<PageSkeleton />}>
+    <>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-primary/10 rounded-2xl">
@@ -717,7 +737,7 @@ export default function PengaturanPresensiMapelPage() {
             { key: "jadwal", label: "Jadwal Pelajaran", icon: Calendar },
           ].map((t) => {
             const Icon = t.icon;
-            const isActive = tab === t.key;
+            const isActive = visibleTab === t.key;
             return (
               <button
                 key={t.key}
@@ -736,6 +756,7 @@ export default function PengaturanPresensiMapelPage() {
           })}
         </div>
 
+        {isTabSwitching ? <TabSwitchSkeleton /> : <>
         {/* TAB: MAPEL */}
         {tab === "mapel" && (
           <div className="space-y-4">
@@ -1027,6 +1048,8 @@ export default function PengaturanPresensiMapelPage() {
           </div>
         )}
 
+        </>}
+
         {/* DIALOGS */}
         <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
           <DialogContent className="sm:max-w-[500px] clay-card border-0 p-0">
@@ -1225,6 +1248,6 @@ export default function PengaturanPresensiMapelPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </SkeletonWrapper>
+    </>
   );
 }

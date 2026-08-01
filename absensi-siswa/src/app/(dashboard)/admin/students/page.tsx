@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { formatDateLocal } from "@/lib/helpers";
 import { Plus, Pencil, Trash2, Search, Users, Download, Upload, FileBarChart, ChevronDown, Loader2, QrCode, FileCode, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import dynamic from "next/dynamic";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -121,6 +120,7 @@ export default function StudentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     nis: "",
     name: "",
@@ -165,7 +165,13 @@ export default function StudentsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
     setFormError("");
+    if (!editingStudent && !form.password) { setFormError("Password wajib diisi."); toast.error("Gagal menyimpan data siswa."); return; }
+    if (form.password && form.password.length < 6) { setFormError("Password minimal 6 karakter."); toast.error("Gagal menyimpan data siswa."); return; }
+
+    setSubmitting(true);
+    try {
     if (editingStudent) {
       const { error: updateError } = await supabase.from("students").update({
         nis: form.nis, name: form.name, class_id: form.class_id,
@@ -173,7 +179,6 @@ export default function StudentsPage() {
       }).eq("id", editingStudent.id);
       if (updateError) { setFormError(updateError.message); toast.error("Gagal menyimpan data siswa."); return; }
       if (form.password) {
-        if (form.password.length < 6) { setFormError("Password minimal 6 karakter."); toast.error("Gagal menyimpan data siswa."); return; }
         const res = await fetch("/api/admin/update-password", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -183,8 +188,6 @@ export default function StudentsPage() {
         if (!res.ok) { setFormError(data.error); toast.error("Gagal menyimpan data siswa."); return; }
       }
     } else {
-      if (!form.password) { setFormError("Password wajib diisi."); toast.error("Gagal menyimpan data siswa."); return; }
-      if (form.password.length < 6) { setFormError("Password minimal 6 karakter."); toast.error("Gagal menyimpan data siswa."); return; }
       const email = form.email || `${form.nis}@siswa.smk3.sch.id`;
       const password = form.password || "Siswa123!";
       const res = await fetch("/api/admin/create-user", {
@@ -209,6 +212,9 @@ export default function StudentsPage() {
     setForm({ nis: "", name: "", class_id: "", email: "", password: "" });
     fetchData();
     toast.success(wasEditing ? "Siswa berhasil diperbarui." : "Siswa baru berhasil ditambahkan.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const handleDelete = useCallback((id: string) => {
@@ -470,7 +476,7 @@ export default function StudentsPage() {
   const totalPages = Math.max(1, Math.ceil(totalStudents / ITEMS_PER_PAGE));
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<StudentsSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
@@ -611,7 +617,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Dialog Tambah/Edit Siswa */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!submitting) setDialogOpen(open); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingStudent ? "Edit Siswa" : "Tambah Siswa"}</DialogTitle>
@@ -619,15 +625,15 @@ export default function StudentsPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-sm font-medium">NIS</label>
-              <input value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} disabled={!!editingStudent} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" required />
+              <input value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} disabled={!!editingStudent || submitting} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" required />
             </div>
             <div>
               <label className="text-sm font-medium">Nama</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" required />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} disabled={submitting} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" required />
             </div>
             <div>
               <label className="text-sm font-medium">Kelas</label>
-              <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none">
+              <select value={form.class_id} onChange={(e) => setForm({ ...form, class_id: e.target.value })} disabled={submitting} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none">
                 <option value="">Pilih kelas</option>
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>{c.name} {c.majors?.name || ""}</option>
@@ -636,16 +642,18 @@ export default function StudentsPage() {
             </div>
             <div>
               <label className="text-sm font-medium">Email <span className="text-xs text-muted-foreground">(opsional)</span></label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" placeholder="user@contoh.com" />
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} disabled={submitting} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" placeholder="user@contoh.com" />
             </div>
             <div>
               <label className="text-sm font-medium">Password {editingStudent ? <span className="text-xs text-muted-foreground">(kosongkan jika tidak diubah)</span> : ""}</label>
-              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" placeholder={editingStudent ? "Biarkan kosong" : "Minimal 6 karakter"} required={!editingStudent} />
+              <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} disabled={submitting} className="clay-input w-full px-3 py-2 text-sm rounded-xl outline-none" placeholder={editingStudent ? "Biarkan kosong" : "Minimal 6 karakter"} required={!editingStudent} />
             </div>
             {formError && <p className="text-sm text-red-500">{formError}</p>}
             <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setDialogOpen(false)} className="px-4 py-2 text-sm font-medium rounded-xl border cursor-pointer">Batal</button>
-              <button type="submit" className="clay-button px-4 py-2 text-sm font-bold rounded-xl text-white cursor-pointer">{editingStudent ? "Simpan" : "Tambah"}</button>
+              <button type="button" onClick={() => setDialogOpen(false)} disabled={submitting} className="px-4 py-2 text-sm font-medium rounded-xl border cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">Batal</button>
+              <button type="submit" disabled={submitting} className="clay-button px-4 py-2 text-sm font-bold rounded-xl text-white cursor-pointer flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60">
+                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Menyimpan...</> : editingStudent ? "Simpan" : "Tambah"}
+              </button>
             </div>
           </form>
         </DialogContent>
@@ -699,6 +707,6 @@ export default function StudentsPage() {
         </div>
       )}
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Home, ClipboardCheck, User, LogOut, Users, Settings, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/helpers";
+import { useNavigationTransition } from "@/contexts/NavigationContext";
 
 interface BottomNavProps {
   onLogout: () => void;
@@ -49,6 +50,7 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
   const pathname = usePathname();
   const router = useRouter();
   const [activePopup, setActivePopup] = useState<string | null>(null);
+  const { pendingHref, beginNavigation: beginShellNavigation } = useNavigationTransition();
 
   const filtered = bottomNavItems.filter((item) => {
     if (!item.roles) return true;
@@ -59,17 +61,51 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
 
   function isActive(href: string) {
     const base = href.split("?")[0];
+    if (base === "/admin/settings" && pathname.startsWith("/admin/pengaturan-presensi-mapel")) {
+      return true;
+    }
     return pathname === base || (base !== "/dashboard" && pathname.startsWith(base));
+  }
+
+  function isPending(href: string) {
+    if (!pendingHref) return false;
+    if (href === "/admin/settings" && pendingHref.startsWith("/admin/pengaturan-presensi-mapel")) return true;
+    return href.split("?")[0] === pendingHref.split("?")[0];
+  }
+
+  function isSelected(href: string) {
+    const base = href.split("?")[0];
+    if (base === "/admin/settings" && pathname.startsWith("/admin/pengaturan-presensi-mapel")) {
+      return true;
+    }
+    return pendingHref ? isPending(href) : isActive(href);
   }
 
   function isPopupActive(items: { href: string }[]) {
     return items.some((item) => isActive(item.href));
   }
 
-  function navigateTo(href: string) {
+  function beginNavigation(href: string) {
     setActivePopup(null);
+    beginShellNavigation(href);
+    router.prefetch(href);
+  }
+
+  function navigateTo(href: string) {
+    beginNavigation(href);
     router.push(href);
   }
+
+  function prepareNavigation(href: string) {
+    beginNavigation(href);
+  }
+
+  useEffect(() => {
+    filtered.forEach((item) => {
+      if (item.type === "link") router.prefetch(item.href);
+      else item.items.forEach((sub) => router.prefetch(sub.href));
+    });
+  }, [router, userRole, isWaliKelas]);
 
   return (
     <>
@@ -86,11 +122,17 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
           {filtered.map((item) => {
             if (item.type === "link") {
               const Icon = item.icon;
-              const active = isActive(item.href);
+              const active = isSelected(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onPointerDown={() => prepareNavigation(item.href)}
+                  onMouseEnter={() => router.prefetch(item.href)}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigateTo(item.href);
+                  }}
                   className={cn(
                     "flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] clay-transition",
                     active
@@ -116,7 +158,9 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
             if (item.type === "popup") {
               const Icon = item.icon;
               const isOpen = activePopup === item.label;
-              const active = isPopupActive(item.items);
+              const active = pendingHref
+                ? item.items.some((sub) => isPending(sub.href))
+                : isPopupActive(item.items);
               return (
                 <div key={item.label} className="relative flex flex-col items-center">
                   <button
@@ -146,11 +190,16 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 clay-card rounded-2xl p-2 shadow-xl z-50 min-w-[160px] animate-in fade-in zoom-in-95">
                       {item.items.map((sub) => {
                         const SubIcon = sub.icon;
-                        const subActive = isActive(sub.href);
+                        const subActive = isSelected(sub.href);
                         return (
                           <button
                             key={sub.href}
-                            onClick={() => navigateTo(sub.href)}
+                            onPointerDown={() => navigateTo(sub.href)}
+                            onMouseEnter={() => router.prefetch(sub.href)}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              if (!isPending(sub.href)) navigateTo(sub.href);
+                            }}
                             className={cn(
                               "w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium clay-transition",
                               subActive

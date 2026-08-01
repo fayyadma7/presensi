@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatDateLocal, formatDate, countSchoolDays, getSchoolDaysInRange } from "@/lib/helpers";
 import { fetchHolidays } from "@/lib/holidays";
 import { ArrowLeft, Download, Filter, FileBarChart, CalendarDays, ChevronDown, BarChart3, Calendar as CalendarIcon, X, Loader2 } from "lucide-react";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -609,7 +608,7 @@ export default function AdminPresensiSiswaPage() {
   }
 
   return (
-    <SkeletonWrapper loading={loading && recapData.length === 0} skeleton={<PresensiSiswaSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -902,6 +901,6 @@ export default function AdminPresensiSiswaPage() {
           </div>
         </div>
       )}
-    </SkeletonWrapper>
+    </>
   );
 }

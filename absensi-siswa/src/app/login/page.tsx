@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { School, Loader2, Eye, EyeOff } from "lucide-react";
+import { ContentSkeleton } from "@/components/DashboardShell";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -38,16 +40,27 @@ export default function LoginPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      if (data?.role === "siswa") {
-        router.push("/siswa/presensi");
-      } else if (data?.role === "tenaga_kependidikan") {
-        router.push("/tenaga-kependidikan/presensi");
-      } else {
-        router.push("/dashboard");
-      }
+      const destination = data?.role === "siswa"
+        ? "/siswa/presensi"
+        : data?.role === "tenaga_kependidikan"
+          ? "/tenaga-kependidikan/presensi"
+          : "/dashboard";
+      setRedirecting(true);
+      requestAnimationFrame(() => router.push(destination));
     } else {
-      router.push("/dashboard");
+      setRedirecting(true);
+      requestAnimationFrame(() => router.push("/dashboard"));
     }
+  }
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-6 flex-1 w-full">
+          <ContentSkeleton />
+        </main>
+      </div>
+    );
   }
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { flushSync } from "react-dom";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,7 +31,6 @@ import { isSchoolDay, formatDateLocal, formatTime, formatDate } from "@/lib/help
 import dynamic from "next/dynamic";
 import { SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 
 const Select = dynamic(() => import("@/components/ui/select").then((m) => m.Select), { ssr: false });
 const SelectContent = dynamic(() => import("@/components/ui/select").then((m) => m.SelectContent), { ssr: false });
@@ -347,6 +347,15 @@ function DashboardPresensiSkeleton() {
   );
 }
 
+function TabSwitchSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse" aria-busy="true" aria-label="Memuat tab presensi">
+      <div className="clay-card h-24 p-5"><div className="h-5 w-48 rounded bg-muted" /><div className="mt-3 h-3 w-64 max-w-full rounded bg-muted" /></div>
+      <div className="clay-card h-64 p-5"><div className="h-5 w-36 rounded bg-muted" /><div className="mt-5 h-40 rounded-2xl bg-muted" /></div>
+    </div>
+  );
+}
+
 export default function GuruPresensiPage() {
   const SIMULASI_MODE = false;
 
@@ -354,6 +363,9 @@ export default function GuruPresensiPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab") || "harian";
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const visibleTab = pendingTab ?? tab;
+  const isTabSwitching = pendingTab !== null;
   const { user, userId, userRole, isWaliKelas } = useAuth();
 
   const [pageLoading, setPageLoading] = useState(true);
@@ -416,6 +428,10 @@ export default function GuruPresensiPage() {
       router.replace("/guru/presensi?tab=harian");
     }
   }, [userRole, isWaliKelas, tab, router]);
+
+  useEffect(() => {
+    if (pendingTab === tab) setPendingTab(null);
+  }, [pendingTab, tab]);
 
   useEffect(() => {
     async function init() {
@@ -907,13 +923,19 @@ export default function GuruPresensiPage() {
   }
 
   function switchTab(t: string) {
-    router.push(`/guru/presensi?tab=${t}`);
+    if (isTabSwitching || t === tab) return;
+
+    // Paint the selected tab and its placeholder before URL navigation renders
+    // the heavier tab content.
+    flushSync(() => setPendingTab(t));
+    router.prefetch(`/guru/presensi?tab=${t}`);
+    requestAnimationFrame(() => router.push(`/guru/presensi?tab=${t}`));
   }
 
   const selectedClassName = classes.find((c) => c.id === selectedClass)?.name || "";
 
   return (
-    <SkeletonWrapper loading={pageLoading} skeleton={<DashboardPresensiSkeleton />}>
+    <>
       <div className="space-y-6">
         {/* Holiday Banner */}
         {!todayIsSchoolDay && (
@@ -951,7 +973,7 @@ export default function GuruPresensiPage() {
           <button
             onClick={() => switchTab("harian")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm flex-1 justify-center clay-transition cursor-pointer ${
-              tab === "harian"
+              visibleTab === "harian"
                 ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(79,70,229,0.3)]"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
@@ -963,7 +985,7 @@ export default function GuruPresensiPage() {
             <button
               onClick={() => switchTab("siswa")}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm flex-1 justify-center clay-transition cursor-pointer ${
-                tab === "siswa"
+                visibleTab === "siswa"
                   ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(79,70,229,0.3)]"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
@@ -975,7 +997,7 @@ export default function GuruPresensiPage() {
           <button
             onClick={() => switchTab("mapel")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm flex-1 justify-center clay-transition cursor-pointer ${
-              tab === "mapel"
+              visibleTab === "mapel"
                 ? "bg-primary text-primary-foreground shadow-[0_4px_12px_rgba(79,70,229,0.3)]"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
@@ -985,6 +1007,7 @@ export default function GuruPresensiPage() {
           </button>
         </div>
 
+        {isTabSwitching ? <TabSwitchSkeleton /> : <>
         {/* TAB: HARIAN (teacher self-attendance) */}
         {tab === "harian" && (
           <div className="space-y-4">
@@ -1632,6 +1655,8 @@ export default function GuruPresensiPage() {
           </div>
         )}
 
+        </>}
+
         {/* Teacher Self-Attendance Modal */}
         <Dialog open={!!teacherStatusOpen} onOpenChange={(open) => { if (!open) setTeacherStatusOpen(null); }}>
           <DialogContent className="sm:max-w-[400px] clay-card border-0 p-0">
@@ -1694,6 +1719,6 @@ export default function GuruPresensiPage() {
           currentTeacherName={currentTeacherName}
         />
       </div>
-    </SkeletonWrapper>
+    </>
   );
 }

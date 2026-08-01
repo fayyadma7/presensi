@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { User, Mail, Lock } from "lucide-react";
 import { SkeletonCard } from "@/components/skeleton";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { toast } from "sonner";
 
 function ProfileCard({
@@ -108,7 +107,7 @@ export default function TenagaKependidikanProfilPage() {
   };
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<ProfilSkeleton />}>
+    <>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-primary/10 rounded-2xl">
@@ -161,6 +160,6 @@ export default function TenagaKependidikanProfilPage() {
           </form>
         </div>
       </div>
-    </SkeletonWrapper>
+    </>
   );
 }

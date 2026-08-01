@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Plus, Pencil, Trash2, Search, BookOpen } from "lucide-react";
 import dynamic from "next/dynamic";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 
@@ -205,7 +204,7 @@ export default function KelasManagePage() {
   );
 
   return (
-    <SkeletonWrapper loading={loading} skeleton={<KelasSkeleton />}>
+    <>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -337,6 +336,6 @@ export default function KelasManagePage() {
         </div>
       </div>
     </div>
-    </SkeletonWrapper>
+    </>
   );
 }

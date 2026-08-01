@@ -22,7 +22,6 @@ import { fetchHolidays, getHolidayName } from "@/lib/holidays";
 import { isSchoolDay, formatDateLocal, formatTime, formatDate } from "@/lib/helpers";
 import { SkeletonCard, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
-import SkeletonWrapper from "@/components/SkeletonWrapper";
 
 interface Settings {
   morning_start: string;
@@ -358,7 +357,7 @@ export default function TenagaKependidikanPresensiPage() {
   }
 
   return (
-    <SkeletonWrapper loading={pageLoading} skeleton={<ProfilSkeleton />}>
+    <>
       <div className="space-y-6">
         {/* Holiday Banner */}
         {!todayIsSchoolDay && (
@@ -764,6 +763,6 @@ export default function TenagaKependidikanPresensiPage() {
           </div>
         )}
       </div>
-    </SkeletonWrapper>
+    </>
   );
 }
