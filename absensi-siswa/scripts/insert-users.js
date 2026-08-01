@@ -1,9 +1,26 @@
 const { createClient } = require("@supabase/supabase-js");
+const fs = require("fs");
+const path = require("path");
 
-const SUPABASE_URL = "https://hnbyyplmkpwlefpilbtu.supabase.co";
-const SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuYnl5cGxta3B3bGVmcGlsYnR1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTc5MTQ1NiwiZXhwIjoyMDk3MzY3NDU2fQ.oJW-cEgRfakd7NCeRjHkKUuY_XGeBHNnEna9dS5bkeM";
+const envPath = path.join(__dirname, "..", ".env.local");
+const envRaw = fs.readFileSync(envPath, "utf-8");
+const envVars = {};
+envRaw.split("\n").forEach((line) => {
+  const [k, ...v] = line.split("=");
+  if (k && v.length) envVars[k.trim()] = v.join("=").trim();
+});
 
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+const supabaseUrl = envVars.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = envVars.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceRoleKey) {
+  console.error("GAGAL: SUPABASE_URL atau SERVICE_ROLE_KEY tidak ditemukan di .env.local");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
 
 async function insertUsers() {
   console.log("=== Insert Users ===\n");
