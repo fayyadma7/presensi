@@ -22,11 +22,12 @@ export default async function DashboardLayout({
   // Get user role for bottom nav and client-side auth
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, name")
     .eq("id", user.id)
     .maybeSingle();
 
   const userRole = userData?.role || "";
+  const userName = userData?.name || "";
 
   // Check if guru is wali kelas
   let isWaliKelas = false;
@@ -40,7 +41,7 @@ export default async function DashboardLayout({
   }
 
   return (
-    <AuthProvider serverUser={user} serverUserRole={userRole} serverIsWaliKelas={isWaliKelas}>
+    <AuthProvider serverUser={user} serverUserRole={userRole} serverUserName={userName} serverIsWaliKelas={isWaliKelas}>
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-6 flex-1 w-full">

@@ -11,8 +11,6 @@ export async function syncHolidaysToDB(year: number): Promise<void> {
 export async function fetchHolidays(year: number): Promise<string[]> {
   const supabase = createClient();
 
-  await syncHolidaysToDB(year);
-
   const { data } = await supabase
     .from("holidays")
     .select("date")

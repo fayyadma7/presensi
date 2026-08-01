@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 const TALLYFY_API = "https://tallyfy.com/national-holidays/api/ID";
 
@@ -7,6 +8,19 @@ export async function GET(req: NextRequest) {
   const year = req.nextUrl.searchParams.get("year");
   if (!year) {
     return NextResponse.json({ error: "year required" }, { status: 400 });
+  }
+
+  const authClient = await createServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: userData } = await authClient
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (userData?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const supabase = createClient(

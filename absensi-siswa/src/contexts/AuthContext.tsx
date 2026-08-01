@@ -9,6 +9,7 @@ interface AuthContextValue {
   user: User | null;
   userId: string;
   userRole: string;
+  userName: string;
   isWaliKelas: boolean;
   loading: boolean;
 }
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   userId: "",
   userRole: "",
+  userName: "",
   isWaliKelas: false,
   loading: true,
 });
@@ -25,17 +27,20 @@ export function AuthProvider({
   children,
   serverUser,
   serverUserRole,
+  serverUserName,
   serverIsWaliKelas,
 }: {
   children: ReactNode;
   serverUser: User | null;
   serverUserRole: string;
+  serverUserName: string;
   serverIsWaliKelas: boolean;
 }) {
   const supabase = createClient();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(serverUser);
   const [userRole, setUserRole] = useState<string>(serverUserRole);
+  const [userName, setUserName] = useState<string>(serverUserName);
   const [isWaliKelas, setIsWaliKelas] = useState<boolean>(serverIsWaliKelas);
   const [loading, setLoading] = useState(!serverUser);
 
@@ -43,6 +48,7 @@ export function AuthProvider({
     if (serverUser) {
       setUser(serverUser);
       setUserRole(serverUserRole);
+      setUserName(serverUserName);
       setIsWaliKelas(serverIsWaliKelas);
       setLoading(false);
       return;
@@ -63,11 +69,12 @@ export function AuthProvider({
 
       const { data: userData } = await supabase
         .from("users")
-        .select("role")
+        .select("role, name")
         .eq("id", authUser.id)
         .maybeSingle();
 
       setUserRole(userData?.role || "");
+      setUserName(userData?.name || "");
       setLoading(false);
     }
 
@@ -78,23 +85,25 @@ export function AuthProvider({
         if (event === "SIGNED_OUT") {
           setUser(null);
           setUserRole("");
+          setUserName("");
           router.push("/login");
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [supabase, router, serverUser, serverUserRole, serverIsWaliKelas]);
+  }, [supabase, router, serverUser, serverUserRole, serverUserName, serverIsWaliKelas]);
 
   const value = useMemo(
     () => ({
       user,
       userId: user?.id || "",
       userRole,
+      userName,
       isWaliKelas,
       loading,
     }),
-    [user, userRole, isWaliKelas, loading]
+    [user, userRole, userName, isWaliKelas, loading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

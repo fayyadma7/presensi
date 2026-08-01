@@ -9,7 +9,6 @@ import dynamic from "next/dynamic";
 import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
 import Link from "next/link";
 
 const Dialog = dynamic(() => import("@/components/ui/dialog").then((m) => m.Dialog), { ssr: false });
@@ -72,6 +71,7 @@ export default function TeachersPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [totalTeachers, setTotalTeachers] = useState(0);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [sortField, setSortField] = useState<"name" | "email">("name");
@@ -86,13 +86,27 @@ export default function TeachersPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importData, setImportData] = useState<{ email: string; name: string; role: string }[]>([]);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
-  useEffect(() => { fetchTeachers(); }, []);
+  useEffect(() => { fetchTeachers(); }, [currentPage, debouncedSearch, sortField, sortDir]);
 
   async function fetchTeachers() {
     setLoading(true);
-    const { data } = await supabase.from("users").select("*").neq("role", "siswa").order("name");
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    let query = supabase
+      .from("users")
+      .select("id, email, name, role", { count: "exact" })
+      .neq("role", "siswa");
+    if (debouncedSearch) {
+      const escapedSearch = debouncedSearch.replaceAll(",", " ");
+      query = query.or(`name.ilike.%${escapedSearch}%,email.ilike.%${escapedSearch}%`);
+    }
+    const { data, count } = await query
+      .order(sortField, { ascending: sortDir === "asc" })
+      .range(from, from + ITEMS_PER_PAGE - 1);
     setTeachers(data || []);
+    setTotalTeachers(count || 0);
     setLoading(false);
   }
 
@@ -170,6 +184,7 @@ export default function TeachersPage() {
   async function handleExport() {
     setExporting(true);
     try {
+      const XLSX = await import("xlsx");
       const { data: users } = await supabase.from("users").select("email, name, role").order("name");
       if (!users) { toast.error("Gagal mengambil data."); return; }
 
@@ -194,13 +209,15 @@ export default function TeachersPage() {
 
   function handleDownloadTemplate() {
     setImportMenuOpen(false);
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet([
-      { Email: "guru@guru.com", Nama: "Nama Guru", Role: "guru" },
-    ]);
+    import("xlsx").then((XLSX) => {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet([
+        { Email: "guru@guru.com", Nama: "Nama Guru", Role: "guru" },
+      ]);
       XLSX.utils.book_append_sheet(wb, ws, "Template Import");
-    XLSX.writeFile(wb, "template-import-guru.xlsx");
-    toast.success("Template berhasil diunduh!");
+      XLSX.writeFile(wb, "template-import-guru.xlsx");
+      toast.success("Template berhasil diunduh!");
+    }).catch(() => toast.error("Gagal menyiapkan format import."));
   }
 
   function handleImportFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -209,7 +226,8 @@ export default function TeachersPage() {
     setImportFile(file);
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
+      const XLSX = await import("xlsx");
       const data = new Uint8Array(ev.target?.result as ArrayBuffer);
       const wb = XLSX.read(data, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -265,16 +283,10 @@ export default function TeachersPage() {
   function toggleSort(field: "name" | "email") {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortField(field); setSortDir("asc"); }
+    setCurrentPage(1);
   }
 
-  const filtered = useMemo(() => {
-    const result = teachers.filter((t) => t.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || t.email.toLowerCase().includes(debouncedSearch.toLowerCase()));
-    result.sort((a, b) => {
-      const cmp = sortField === "name" ? a.name.localeCompare(b.name) : a.email.localeCompare(b.email);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return result;
-  }, [teachers, debouncedSearch, sortField, sortDir]);
+  const totalPages = Math.max(1, Math.ceil(totalTeachers / ITEMS_PER_PAGE));
 
   return (
     <SkeletonWrapper loading={loading} skeleton={<TeachersSkeleton />}>
@@ -293,7 +305,7 @@ export default function TeachersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               placeholder="Cari nama atau email..."
               className="clay-input pl-10 pr-4 py-2 text-sm rounded-xl outline-none w-full sm:w-48"
             />
@@ -357,11 +369,20 @@ export default function TeachersPage() {
               <th className="px-4 py-3 text-xs font-bold text-muted-foreground text-center">Aksi</th>
             </tr></thead>
             <tbody>
-              {filtered.map((teacher) => (<TeacherRow key={teacher.id} teacher={teacher} onEdit={openEdit} onDelete={handleDelete} />))}
-              {filtered.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-muted-foreground">Tidak ada data ditemukan</td></tr>}
+              {teachers.map((teacher) => (<TeacherRow key={teacher.id} teacher={teacher} onEdit={openEdit} onDelete={handleDelete} />))}
+              {teachers.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-muted-foreground">Tidak ada data ditemukan</td></tr>}
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border/50 bg-muted/20">
+            <span className="text-sm text-muted-foreground">Halaman {currentPage} dari {totalPages} ({totalTeachers} data)</span>
+            <div className="flex gap-2">
+              <button onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border disabled:opacity-40">Sebelumnya</button>
+              <button onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 text-sm font-medium rounded-lg border border-border disabled:opacity-40">Berikutnya</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dialog Tambah/Edit Guru */}

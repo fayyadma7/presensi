@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import { useEffect, useState, useMemo, memo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,7 +31,6 @@ import { Skeleton, SkeletonStats, SkeletonChart, SkeletonTable } from "@/compone
 import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { fetchHolidays, getHolidayName } from "@/lib/holidays";
 import { isSchoolDay, getPrevSchoolDays, isTodaySchoolDay, formatDateLocal } from "@/lib/helpers";
-import BarcodeScannerModal from "@/components/BarcodeScannerModal";
 import StudentListModal from "@/components/StudentListModal";
 import ScanResultModal from "@/components/ScanResultModal";
 import { SubjectAttendanceModal } from "@/components/SubjectAttendanceModal";
@@ -45,6 +44,7 @@ const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.Cartesi
 const Tooltip = dynamic(() => import("recharts").then((mod) => mod.Tooltip), { ssr: false });
 const ResponsiveContainer = dynamic(() => import("recharts").then((mod) => mod.ResponsiveContainer), { ssr: false });
 const Legend = dynamic(() => import("recharts").then((mod) => mod.Legend), { ssr: false });
+const BarcodeScannerModal = dynamic(() => import("@/components/BarcodeScannerModal"), { ssr: false });
 
 interface Stats {
   totalStudents: number;
@@ -349,6 +349,7 @@ export default function DashboardPage() {
     open: boolean;
     schedule: any | null;
   }>({ open: false, schedule: null });
+  const initializedClassId = useRef<string | null>(null);
 
   const openScanner = () => {
     setScannedBarcode(undefined);
@@ -642,11 +643,13 @@ const closeScanner = () => {
         setClassList(guruClasses);
         const defaultId = myClassResult.data?.id || guruClasses[0]?.id || "all";
         setSelectedClassId(defaultId);
+        initializedClassId.current = defaultId;
         await fetchClassData(defaultId, holidayDates);
       } else {
         const { data: allClasses } = await supabase.from("classes").select("id, name").order("name");
         setClassList(allClasses || []);
         setSelectedClassId("all");
+        initializedClassId.current = "all";
         await fetchClassData("all", holidayDates);
       }
 
@@ -665,10 +668,10 @@ const closeScanner = () => {
   }, [supabase, router, user, userId, fetchClassData, currentYear]);
 
   useEffect(() => {
-    if (selectedClassId) {
-      fetchClassData(selectedClassId, holidays);
-    }
-  }, [selectedClassId, fetchClassData, holidays]);
+    if (loading || !selectedClassId || initializedClassId.current === selectedClassId) return;
+    initializedClassId.current = selectedClassId;
+    fetchClassData(selectedClassId, holidays);
+  }, [loading, selectedClassId, fetchClassData, holidays]);
 
   // Real-time subscription for attendance changes
   useEffect(() => {

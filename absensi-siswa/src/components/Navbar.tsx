@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   Users,
@@ -57,41 +58,9 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
-  const [userName, setUserName] = useState("");
-  const [userRole, setUserRole] = useState("");
-  const [isWaliKelas, setIsWaliKelas] = useState(false);
+  const { userName, userRole, isWaliKelas } = useAuth();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function getUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.push("/login");
-        return;
-      }
-      const { data } = await supabase
-        .from("users")
-        .select("name, role")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (data) {
-        setUserName(data.name);
-        setUserRole(data.role);
-        if (data.role === "guru") {
-          const { data: kelasData } = await supabase
-            .from("classes")
-            .select("id")
-            .eq("wali_kelas_id", user.id)
-            .maybeSingle();
-          setIsWaliKelas(!!kelasData);
-        }
-      }
-    }
-    getUser();
-  }, [supabase, router]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

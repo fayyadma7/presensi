@@ -10,9 +10,6 @@ import SkeletonWrapper from "@/components/SkeletonWrapper";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import Link from "next/link";
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
-import JSZip from "jszip";
 import { generateBarcodeDataURL } from "@/lib/barcode";
 
 /* ============================================================
@@ -117,6 +114,7 @@ export default function StudentsPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [classes, setClasses] = useState<Class[]>([]);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -142,17 +140,25 @@ export default function StudentsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const ITEMS_PER_PAGE = 20;
 
-  useEffect(() => { fetchData(); }, []);
-
-  useEffect(() => { setCurrentPage(1); }, [debouncedSearch]);
+  useEffect(() => { fetchData(); }, [currentPage, debouncedSearch, sortField, sortDir]);
 
   async function fetchData() {
     setLoading(true);
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    let studentsQuery = supabase
+      .from("students")
+      .select("id, nis, name, class_id, email, status, classes(name, majors(name))", { count: "exact" });
+    if (debouncedSearch) {
+      const escapedSearch = debouncedSearch.replaceAll(",", " ");
+      studentsQuery = studentsQuery.or(`name.ilike.%${escapedSearch}%,nis.ilike.%${escapedSearch}%`);
+    }
+    const orderColumn = sortField === "class" ? "name" : sortField;
     const [studentsRes, classesRes] = await Promise.all([
-      supabase.from("students").select("*, classes(name, majors(name))").order("nis"),
-      supabase.from("classes").select("*, majors(name)").order("name"),
+      studentsQuery.order(orderColumn, { ascending: sortDir === "asc" }).range(from, from + ITEMS_PER_PAGE - 1),
+      supabase.from("classes").select("id, name, grade_level, major_id, majors(name)").order("name"),
     ]);
     setStudents(studentsRes.data || []);
+    setTotalStudents(studentsRes.count || 0);
     setClasses(classesRes.data || []);
     setLoading(false);
   }
@@ -258,6 +264,7 @@ export default function StudentsPage() {
   async function handleExport() {
     setExporting(true);
     try {
+      const XLSX = await import("xlsx");
       const { data: students } = await supabase
         .from("students")
         .select("nis, name, email, status, classes(name)")
@@ -297,6 +304,7 @@ export default function StudentsPage() {
   async function handleExportBarcode() {
     setExporting(true);
     try {
+      const [{ jsPDF }, { default: JSZip }] = await Promise.all([import("jspdf"), import("jszip")]);
       const { data: students } = await supabase
         .from("students")
         .select("nis, name, class_id, classes(name)")
@@ -368,13 +376,15 @@ export default function StudentsPage() {
 
   function handleDownloadTemplate() {
     setImportMenuOpen(false);
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet([
-      { NIS: "123456", Nama: "Nama Siswa", Kelas: "X AKL 1" },
-    ]);
-    XLSX.utils.book_append_sheet(wb, ws, "Template Import Siswa");
-    XLSX.writeFile(wb, "template-import-siswa.xlsx");
-    toast.success("Template berhasil diunduh!");
+    import("xlsx").then((XLSX) => {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet([
+        { NIS: "123456", Nama: "Nama Siswa", Kelas: "X AKL 1" },
+      ]);
+      XLSX.utils.book_append_sheet(wb, ws, "Template Import Siswa");
+      XLSX.writeFile(wb, "template-import-siswa.xlsx");
+      toast.success("Template berhasil diunduh!");
+    }).catch(() => toast.error("Gagal menyiapkan format import."));
   }
 
   function handleImportFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -383,7 +393,8 @@ export default function StudentsPage() {
     setImportFile(file);
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
+      const XLSX = await import("xlsx");
       const data = new Uint8Array(ev.target?.result as ArrayBuffer);
       const wb = XLSX.read(data, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -456,27 +467,7 @@ export default function StudentsPage() {
     setCurrentPage(1);
   }
 
-  const filtered = useMemo(() => {
-    const result = students.filter((s) =>
-      s.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      s.nis.includes(debouncedSearch) ||
-      s.classes?.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-    );
-    result.sort((a, b) => {
-      let cmp = 0;
-      if (sortField === "nis") cmp = a.nis.localeCompare(b.nis);
-      else if (sortField === "name") cmp = a.name.localeCompare(b.name);
-      else if (sortField === "class") cmp = (a.classes?.name || "").localeCompare(b.classes?.name || "");
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-    return result;
-  }, [students, debouncedSearch, sortField, sortDir]);
-
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginatedStudents = useMemo(
-    () => filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [filtered, currentPage]
-  );
+  const totalPages = Math.max(1, Math.ceil(totalStudents / ITEMS_PER_PAGE));
 
   return (
     <SkeletonWrapper loading={loading} skeleton={<StudentsSkeleton />}>
@@ -487,7 +478,7 @@ export default function StudentsPage() {
           <div className="p-3 bg-primary/10 rounded-2xl"><Users className="h-6 w-6 text-primary" /></div>
           <div>
             <h1 className="font-heading text-2xl font-bold text-foreground">Data Siswa</h1>
-            <p className="text-sm text-muted-foreground">{filtered.length} siswa terdaftar</p>
+            <p className="text-sm text-muted-foreground">{totalStudents} siswa terdaftar</p>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -495,7 +486,7 @@ export default function StudentsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               placeholder="Cari siswa..."
               className="clay-input pl-10 pr-4 py-2 text-sm rounded-xl outline-none w-full sm:w-48"
             />
@@ -564,10 +555,10 @@ export default function StudentsPage() {
               </tr>
             </thead>
             <tbody>
-              {paginatedStudents.map((student) => (
+              {students.map((student) => (
                 <StudentRow key={student.id} student={student} onEdit={openEdit} onDelete={handleDelete} />
               ))}
-              {filtered.length === 0 && (
+              {students.length === 0 && (
                 <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Tidak ada data siswa ditemukan</td></tr>
               )}
             </tbody>
@@ -577,11 +568,11 @@ export default function StudentsPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-4 py-3 border-t border-border/50 bg-muted/20 rounded-b-xl space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex flex-col items-center gap-2">
               <span className="text-sm text-muted-foreground shrink-0">
-                Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} dari {filtered.length} siswa
+                Menampilkan {totalStudents === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalStudents)} dari {totalStudents} siswa
               </span>
-              <div className="flex items-center gap-1 overflow-x-auto pb-1">
+              <div className="flex items-center justify-center gap-1 overflow-x-auto pb-1 max-w-full">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}

@@ -85,6 +85,8 @@ export default function SettingsPage() {
   const [newHolidayEnd, setNewHolidayEnd] = useState("");
   const [newHolidayName, setNewHolidayName] = useState("");
   const [holidayError, setHolidayError] = useState("");
+  const [syncingHolidays, setSyncingHolidays] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassItem | null>(null);
@@ -177,12 +179,32 @@ export default function SettingsPage() {
   async function fetchHolidays() {
     try {
       const year = new Date().getFullYear();
-      const res = await fetch(`/api/admin/sync-holidays?year=${year}`);
-      const json = await res.json();
-      setHolidays(json.holidays || []);
+      const { data } = await supabase
+        .from("holidays")
+        .select("id, date, name, source")
+        .gte("date", `${year}-01-01`)
+        .lte("date", `${year}-12-31`)
+        .order("date");
+      setHolidays(data || []);
     } catch (err) {
       console.error("[Holidays] Error:", err);
       setHolidays([]);
+    }
+  }
+
+  async function syncHolidays() {
+    setSyncingHolidays(true);
+    try {
+      const year = new Date().getFullYear();
+      const res = await fetch(`/api/admin/sync-holidays?year=${year}`);
+      if (!res.ok) throw new Error("Sinkronisasi gagal");
+      const json = await res.json();
+      setHolidays(json.holidays || []);
+      toast.success(`${json.synced || 0} hari libur baru berhasil disinkronkan.`);
+    } catch {
+      toast.error("Gagal menyinkronkan hari libur.");
+    } finally {
+      setSyncingHolidays(false);
     }
   }
 
@@ -323,14 +345,20 @@ export default function SettingsPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <MapPicker
-                lat={settings.school_lat}
-                lng={settings.school_lng}
-                onLocationChange={(lat, lng) => {
-                  updateSetting("school_lat", lat);
-                  updateSetting("school_lng", lng);
-                }}
-              />
+              {showMap ? (
+                <MapPicker
+                  lat={settings.school_lat}
+                  lng={settings.school_lng}
+                  onLocationChange={(lat, lng) => {
+                    updateSetting("school_lat", lat);
+                    updateSetting("school_lng", lng);
+                  }}
+                />
+              ) : (
+                <button type="button" onClick={() => setShowMap(true)} className="w-full h-[300px] rounded-2xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-2 text-sm font-bold text-primary">
+                  <MapPin className="h-6 w-6" /> Tampilkan peta
+                </button>
+              )}
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -463,9 +491,14 @@ export default function SettingsPage() {
 
         {/* Hari Libur */}
         <div className="clay-card p-6 lg:col-span-2">
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarOff className="h-5 w-5 text-primary" />
-            <h2 className="font-heading font-bold text-foreground">Hari Libur Nasional</h2>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="flex items-center gap-2">
+              <CalendarOff className="h-5 w-5 text-primary" />
+              <h2 className="font-heading font-bold text-foreground">Hari Libur Nasional</h2>
+            </div>
+            <button type="button" onClick={syncHolidays} disabled={syncingHolidays} className="clay-button px-3 py-2 text-xs font-bold rounded-xl disabled:opacity-60">
+              {syncingHolidays ? "Menyinkronkan..." : "Sinkronkan"}
+            </button>
           </div>
           <p className="text-xs text-muted-foreground mb-4">Libur otomatis dihitung dari hari Sabtu & Minggu. Hari libur nasional atau cuti bersama bisa ditambahkan di bawah.</p>
 
