@@ -3,19 +3,12 @@
 import { useEffect, useState, useMemo, useRef, memo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Users, Clock, CheckCircle, XCircle, Calendar, RefreshCw, CalendarOff, ArrowLeft, Download, Filter, CalendarDays, BarChart3, ChevronDown, X } from "lucide-react";
-import { formatDate, formatTime, countSchoolDays, isSchoolDay, formatDateLocal } from "@/lib/helpers";
+import { formatDate, formatTime, getSchoolDaysInRange, isSchoolDay, formatDateLocal } from "@/lib/helpers";
 import { fetchHolidays } from "@/lib/holidays";
 import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-
-const Select = dynamic(() => import("@/components/ui/select").then((m) => m.Select), { ssr: false });
-const SelectContent = dynamic(() => import("@/components/ui/select").then((m) => m.SelectContent), { ssr: false });
-const SelectItem = dynamic(() => import("@/components/ui/select").then((m) => m.SelectItem), { ssr: false });
-const SelectTrigger = dynamic(() => import("@/components/ui/select").then((m) => m.SelectTrigger), { ssr: false });
-const SelectValue = dynamic(() => import("@/components/ui/select").then((m) => m.SelectValue), { ssr: false });
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -43,6 +36,33 @@ interface GuruRecapData {
   sakit: number;
   izin: number;
   alpa: number;
+}
+
+type TeacherAttendanceRecord = {
+  teacher_id: string;
+  date: string;
+  status: string;
+};
+
+function getTeacherAlpaCount(
+  records: TeacherAttendanceRecord[],
+  startDate: string,
+  endDate: string,
+  holidays: string[]
+) {
+  const today = formatDateLocal();
+  const yesterday = new Date(`${today}T00:00:00`);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const completedEndDate = endDate < today ? endDate : formatDateLocal(yesterday);
+
+  const recordedDays = new Set(records.map((record) => record.date));
+  const missingDays = startDate > completedEndDate
+    ? 0
+    : getSchoolDaysInRange(startDate, completedEndDate, holidays)
+      .filter((date) => !recordedDays.has(date)).length;
+  const explicitAlpa = records.filter((record) => record.status === "alpa").length;
+
+  return missingDays + explicitAlpa;
 }
 
 const StatusBadge = memo(function StatusBadge({ status }: { status: string }) {
@@ -104,7 +124,6 @@ export default function AdminPresensiGuruPage() {
     formatDateLocal(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   );
   const [endDate, setEndDate] = useState(() => formatDateLocal());
-  const [filterStatus, setFilterStatus] = useState("all");
   const [history, setHistory] = useState<(TeacherAttendance & { teacher_name: string })[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [historyTeacherId, setHistoryTeacherId] = useState<string | null>(null);
@@ -167,7 +186,7 @@ export default function AdminPresensiGuruPage() {
 
     const { data: attData } = await supabase
       .from("teacher_attendance")
-      .select("teacher_id, status")
+      .select("teacher_id, date, status")
       .gte("date", startDate)
       .lte("date", endDate)
       .in("teacher_id", teacherIds);
@@ -182,11 +201,16 @@ export default function AdminPresensiGuruPage() {
       }
     });
 
-    const schoolDays = countSchoolDays(startDate, endDate, holidays);
-
     const recap: GuruRecapData[] = usersData.map((u: { id: string; name: string; email: string }) => {
       const counts = countMap[u.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
-      return { teacher_id: u.id, name: u.name, email: u.email, ...counts };
+      const teacherRecords = (attData || []).filter((a: TeacherAttendanceRecord) => a.teacher_id === u.id);
+      return {
+        teacher_id: u.id,
+        name: u.name,
+        email: u.email,
+        ...counts,
+        alpa: getTeacherAlpaCount(teacherRecords, startDate, endDate, holidays),
+      };
     });
 
     setRecapData(recap);
@@ -209,18 +233,6 @@ export default function AdminPresensiGuruPage() {
 
     setHistory(result);
   }
-
-  const filteredRecap = useMemo(() => {
-    if (filterStatus === "all") return recapData;
-    return recapData.filter((r) => {
-      if (filterStatus === "hadir") return r.hadir > 0;
-      if (filterStatus === "terlambat") return r.terlambat > 0;
-      if (filterStatus === "sakit") return r.sakit > 0;
-      if (filterStatus === "izin") return r.izin > 0;
-      if (filterStatus === "alpa") return r.alpa > 0;
-      return true;
-    });
-  }, [recapData, filterStatus]);
 
   const stats = useMemo(() => {
     const total = recapData.length;
@@ -273,7 +285,7 @@ export default function AdminPresensiGuruPage() {
     setExporting(true);
     setShowExportMenu(false);
     try {
-      const rows = filteredRecap.map((r, i) => ({
+      const rows = recapData.map((r, i) => ({
         No: i + 1,
         Nama: r.name,
         Email: r.email,
@@ -347,10 +359,9 @@ export default function AdminPresensiGuruPage() {
           if (a.status in countMap[a.teacher_id]) countMap[a.teacher_id][a.status]++;
         });
 
-        const mSchoolDays = countSchoolDays(mStart, mEnd, holidays);
-
         const rows = usersData.map((u: { id: string; name: string; email: string }, i: number) => {
           const counts = countMap[u.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+          const teacherRecords = monthAtts.filter((a: TeacherAttendanceRecord) => a.teacher_id === u.id);
           return {
             No: i + 1,
             Nama: u.name,
@@ -359,7 +370,7 @@ export default function AdminPresensiGuruPage() {
             Terlambat: counts.terlambat,
             Sakit: counts.sakit,
             Izin: counts.izin,
-            Alpa: counts.alpa,
+            Alpa: getTeacherAlpaCount(teacherRecords, mStart, mEnd, holidays),
           };
         });
 
@@ -382,11 +393,16 @@ export default function AdminPresensiGuruPage() {
         for (const { year, month, label } of months) {
           const key = `${year}-${month}`;
           const counts = annualCountMap[u.id]?.[key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+          const mStart = formatDateLocal(new Date(year, month, 1));
+          const mEnd = formatDateLocal(new Date(year, month + 1, 0));
+          const teacherRecords = (attData || []).filter((a: TeacherAttendanceRecord) => (
+            a.teacher_id === u.id && a.date >= mStart && a.date <= mEnd
+          ));
           row[`${label} Hadir`] = counts.hadir;
           row[`${label} Terlambat`] = counts.terlambat;
           row[`${label} Sakit`] = counts.sakit;
           row[`${label} Izin`] = counts.izin;
-          row[`${label} Alpa`] = counts.alpa;
+          row[`${label} Alpa`] = getTeacherAlpaCount(teacherRecords, mStart, mEnd, holidays);
         }
         return row;
       });
@@ -493,40 +509,24 @@ export default function AdminPresensiGuruPage() {
           <Filter className="h-4 w-4 text-primary" />
           <span className="text-sm font-bold text-foreground">Filter</span>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="space-y-2.5 flex-1">
-            <label className="text-xs font-bold text-muted-foreground">Dari Tanggal</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="flex items-center gap-3">
+            <label className="w-24 shrink-0 text-xs font-bold text-muted-foreground">Dari Tanggal</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="clay-input px-4 py-2 rounded-xl outline-none"
+              className="clay-input h-10 min-w-0 flex-1 px-3 rounded-xl outline-none"
             />
           </div>
-          <div className="space-y-2.5 flex-1">
-            <label className="text-xs font-bold text-muted-foreground">Sampai Tanggal</label>
+          <div className="flex items-center gap-3">
+            <label className="w-24 shrink-0 text-xs font-bold text-muted-foreground">Sampai Tanggal</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="clay-input px-4 py-2 rounded-xl outline-none"
+              className="clay-input h-10 min-w-0 flex-1 px-3 rounded-xl outline-none"
             />
-          </div>
-          <div className="space-y-2.5 flex-1">
-            <label className="text-xs font-bold text-muted-foreground">Status</label>
-            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(String(v || "all"))}>
-              <SelectTrigger className="cursor-pointer clay-input h-10 px-4 rounded-xl border-0 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="cursor-pointer">Semua Status</SelectItem>
-                <SelectItem value="hadir" className="cursor-pointer">Hadir</SelectItem>
-                <SelectItem value="terlambat" className="cursor-pointer">Terlambat</SelectItem>
-                <SelectItem value="sakit" className="cursor-pointer">Sakit</SelectItem>
-                <SelectItem value="izin" className="cursor-pointer">Izin</SelectItem>
-                <SelectItem value="alpa" className="cursor-pointer">Alpa</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
@@ -605,7 +605,7 @@ export default function AdminPresensiGuruPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredRecap.map((r, i) => (
+              {recapData.map((r, i) => (
                 <tr key={r.teacher_id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
                   <td className="px-4 py-3 text-center text-sm text-muted-foreground">{i + 1}</td>
                   <td className="px-4 py-3 font-medium">{r.name}</td>
@@ -625,7 +625,7 @@ export default function AdminPresensiGuruPage() {
                   </td>
                 </tr>
               ))}
-              {filteredRecap.length === 0 && (
+              {recapData.length === 0 && (
                 <tr>
                   <td colSpan={9} className="text-center py-8 text-muted-foreground">
                     Tidak ada data guru

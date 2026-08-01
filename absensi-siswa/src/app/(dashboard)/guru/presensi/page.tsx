@@ -31,6 +31,7 @@ import { isSchoolDay, formatDateLocal, formatTime, formatDate } from "@/lib/help
 import dynamic from "next/dynamic";
 import { SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
+import DashboardNavigationLink from "@/components/DashboardNavigationLink";
 
 const Select = dynamic(() => import("@/components/ui/select").then((m) => m.Select), { ssr: false });
 const SelectContent = dynamic(() => import("@/components/ui/select").then((m) => m.SelectContent), { ssr: false });
@@ -1374,13 +1375,13 @@ export default function GuruPresensiPage() {
 
             {/* Rekap Presensi Button */}
             <div className="flex justify-end">
-              <a
+              <DashboardNavigationLink
                 href="/guru/rekap"
                 className="clay-button-accent px-4 py-2.5 text-white text-sm font-bold rounded-xl cursor-pointer flex items-center gap-2"
               >
                 <ListChecks className="h-3.5 w-3.5" />
                 <span className="text-sm font-bold">Rekap Presensi</span>
-              </a>
+              </DashboardNavigationLink>
             </div>
 
             {/* Student List */}

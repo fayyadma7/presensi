@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Download, FileBarChart, Filter, CalendarDays, Calendar, BarChart3, ChevronDown, X } from "lucide-react";
-import { formatDate, countSchoolDays, formatDateLocal, getSchoolDaysInRange } from "@/lib/helpers";
+import { formatDate, formatDateLocal, getSchoolDaysInRange } from "@/lib/helpers";
 import { fetchHolidays } from "@/lib/holidays";
 import dynamic from "next/dynamic";
 import { SkeletonTable } from "@/components/skeleton";
@@ -39,6 +39,37 @@ interface AttendanceDetail {
   location_lat: number | null;
   location_lng: number | null;
   notes: string | null;
+}
+
+type StudentAttendanceRecord = {
+  student_id: string;
+  date: string;
+  masuk_status: string | null;
+};
+
+function getCompletedSchoolDays(startDate: string, endDate: string, holidays: string[]) {
+  const today = formatDateLocal();
+  const yesterday = new Date(`${today}T00:00:00`);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const completedEndDate = endDate < today ? endDate : formatDateLocal(yesterday);
+
+  return startDate > completedEndDate
+    ? []
+    : getSchoolDaysInRange(startDate, completedEndDate, holidays);
+}
+
+function getStudentAlpaCount(
+  records: StudentAttendanceRecord[],
+  startDate: string,
+  endDate: string,
+  holidays: string[]
+) {
+  const recordedDays = new Set(records.map((record) => record.date));
+  const missingDays = getCompletedSchoolDays(startDate, endDate, holidays)
+    .filter((date) => !recordedDays.has(date)).length;
+  const explicitAlpa = records.filter((record) => record.masuk_status === "alpa").length;
+
+  return missingDays + explicitAlpa;
 }
 
 const MONTHS = [
@@ -141,7 +172,7 @@ export default function RekapPage() {
     const studentIds = studentsData.map((s: { id: string }) => s.id);
     if (studentIds.length === 0) { setRecapData([]); setLoading(false); return; }
 
-    const { data: attData } = await supabase.from("attendance").select("student_id, masuk_status, late_status, location_lat, location_lng").gte("date", startDate).lte("date", endDate).in("student_id", studentIds);
+    const { data: attData } = await supabase.from("attendance").select("student_id, date, masuk_status, late_status, location_lat, location_lng").gte("date", startDate).lte("date", endDate).in("student_id", studentIds);
     const countMap: Record<string, Record<string, number>> = {};
     const locationMap: Record<string, number> = {};
     const lastLocationMap: Record<string, { lat: number; lng: number }> = {};
@@ -163,12 +194,10 @@ export default function RekapPage() {
     const classIdMap: Record<string, string> = {};
     for (const cls of classes) { classIdMap[cls.id] = cls.name; }
 
-    const schoolDays = countSchoolDays(startDate, endDate, holidays);
-
     const recap: RecapData[] = studentsData.map((s: { id: string; nis: string; name: string; class_id?: string; classes: unknown }) => {
       const counts = countMap[s.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
-      const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
-      counts.alpa = computedAlpa;
+      const studentRecords = (attData || []).filter((a: StudentAttendanceRecord) => a.student_id === s.id);
+      counts.alpa = getStudentAlpaCount(studentRecords, startDate, endDate, holidays);
       let resolvedClass = "";
       if (Array.isArray(s.classes) && s.classes.length > 0) {
         resolvedClass = (s.classes[0] as { name: string })?.name || "";
@@ -294,8 +323,7 @@ export default function RekapPage() {
       const notesMap: Record<string, string[]> = {};
       const mapelMap: Record<string, string[]> = {};
 
-      const schoolDaysArr = getSchoolDaysInRange(startDate, endDate, holidays);
-      const schoolDays = schoolDaysArr.length;
+      const schoolDaysArr = getCompletedSchoolDays(startDate, endDate, holidays);
 
       // Map presence days per student
       const presentDaysMap: Record<string, Set<string>> = {};
@@ -352,7 +380,8 @@ export default function RekapPage() {
 
       const rows = recapData.map((r, i) => {
         const counts = countMap[r.student_id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
-        const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
+        const studentRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id);
+        const computedAlpa = getStudentAlpaCount(studentRecords, startDate, endDate, holidays);
         const keterangan = (notesMap[r.student_id] || []).join("\n") || "-";
         return {
           No: i + 1,
@@ -468,14 +497,12 @@ export default function RekapPage() {
       }
 
       // Pre-compute school days per month for alpa calculation and auto notes
-      const monthSchoolDays: Record<string, number> = {};
       const monthSchoolDaysArrMap: Record<string, string[]> = {};
       for (const mk of monthKeys) {
         const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
         const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
-        const arr = getSchoolDaysInRange(mStart, mEnd, holidays);
+        const arr = getCompletedSchoolDays(mStart, mEnd, holidays);
         monthSchoolDaysArrMap[mk.key] = arr;
-        monthSchoolDays[mk.key] = arr.length;
       }
 
       // Add "Alpa" auto notes for missing presence
@@ -507,11 +534,13 @@ export default function RekapPage() {
 
       // === SHEETS PER BULAN ===
       for (const mk of monthKeys) {
-        const schoolDays = monthSchoolDays[mk.key];
+        const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
+        const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
 
         const rows = recapData.map((r, i) => {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
-          const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
+          const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd);
+          const computedAlpa = getStudentAlpaCount(monthRecords, mStart, mEnd, holidays);
           const notes = (monthNotes[r.student_id]?.[mk.key] || []).join("\n") || "-";
           return {
             No: i + 1,
@@ -588,8 +617,10 @@ export default function RekapPage() {
         const row: (string | number)[] = [i + 1, r.nis, r.name, r.className];
         monthKeys.forEach((mk) => {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
-          const schoolDays = monthSchoolDays[mk.key];
-          const computedAlpa = Math.max(0, schoolDays - (counts.hadir + counts.sakit + counts.izin + counts.dispen));
+          const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
+          const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
+          const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd);
+          const computedAlpa = getStudentAlpaCount(monthRecords, mStart, mEnd, holidays);
           row.push(counts.hadir, counts.terlambat, counts.sakit, counts.izin, counts.dispen, computedAlpa);
         });
         return row;

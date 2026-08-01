@@ -8,7 +8,7 @@ import { Plus, Pencil, Trash2, Search, GraduationCap, Download, Upload, FileBarC
 import dynamic from "next/dynamic";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
-import Link from "next/link";
+import DashboardNavigationLink from "@/components/DashboardNavigationLink";
 
 const Dialog = dynamic(() => import("@/components/ui/dialog").then((m) => m.Dialog), { ssr: false });
 const DialogContent = dynamic(() => import("@/components/ui/dialog").then((m) => m.DialogContent), { ssr: false });
@@ -334,9 +334,9 @@ export default function TeachersPage() {
             <button onClick={handleExport} disabled={exporting} className="clay-button px-4 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2 cursor-pointer">
               {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Export
             </button>
-            <Link href="/admin/presensi-guru" className="clay-button px-4 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2">
+            <DashboardNavigationLink href="/admin/presensi-guru" className="clay-button px-4 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2">
               <FileBarChart className="h-4 w-4" /> Rekap
-            </Link>
+            </DashboardNavigationLink>
             <button onClick={openAdd} className="clay-button-accent px-4 py-2.5 text-black text-sm font-bold rounded-xl flex items-center gap-2 cursor-pointer">
               <Plus className="h-4 w-4" /> Tambah
             </button>

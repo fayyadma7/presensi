@@ -8,8 +8,8 @@ import { Plus, Pencil, Trash2, Search, Users, Download, Upload, FileBarChart, Ch
 import dynamic from "next/dynamic";
 import { Skeleton, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
-import Link from "next/link";
 import { generateBarcodeDataURL } from "@/lib/barcode";
+import DashboardNavigationLink from "@/components/DashboardNavigationLink";
 
 /* ============================================================
    Dynamic imports – lazy load modal & select
@@ -522,9 +522,9 @@ export default function StudentsPage() {
             <button onClick={handleExportBarcode} disabled={exporting} className="clay-button px-4 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2 cursor-pointer">
               {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />} Barcode
             </button>
-            <Link href="/admin/presensi-siswa" className="clay-button px-4 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2">
+            <DashboardNavigationLink href="/admin/presensi-siswa" className="clay-button px-4 py-2.5 text-sm font-bold rounded-xl flex items-center gap-2">
               <FileBarChart className="h-4 w-4" /> Rekap
-            </Link>
+            </DashboardNavigationLink>
             <button onClick={openAdd} className="clay-button-accent px-4 py-2.5 text-black text-sm font-bold rounded-xl flex items-center gap-2 cursor-pointer">
               <Plus className="h-4 w-4" /> Tambah
             </button>

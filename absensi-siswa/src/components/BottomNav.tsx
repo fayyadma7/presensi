@@ -64,6 +64,7 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
     if (base === "/admin/settings" && pathname.startsWith("/admin/pengaturan-presensi-mapel")) {
       return true;
     }
+    if (base === "/guru/presensi" && pathname.startsWith("/guru/rekap")) return true;
     return pathname === base || (base !== "/dashboard" && pathname.startsWith(base));
   }
 
@@ -82,6 +83,9 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
   }
 
   function isPopupActive(items: { href: string }[]) {
+    if (items.some((item) => item.href === "/admin/students") && (pathname.startsWith("/admin/presensi-siswa") || pathname.startsWith("/admin/presensi-guru"))) {
+      return true;
+    }
     return items.some((item) => isActive(item.href));
   }
 
@@ -159,7 +163,7 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
               const Icon = item.icon;
               const isOpen = activePopup === item.label;
               const active = pendingHref
-                ? item.items.some((sub) => isPending(sub.href))
+                ? item.items.some((sub) => isPending(sub.href)) || (item.items.some((sub) => sub.href === "/admin/students") && (pendingHref.startsWith("/admin/presensi-siswa") || pendingHref.startsWith("/admin/presensi-guru")))
                 : isPopupActive(item.items);
               return (
                 <div key={item.label} className="relative flex flex-col items-center">
