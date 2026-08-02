@@ -121,7 +121,7 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
         />
       )}
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bottom-nav px-2 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed left-3 right-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-50 bottom-nav px-2">
         <div className="flex items-center justify-around py-2 relative">
           {filtered.map((item) => {
             if (item.type === "link") {
