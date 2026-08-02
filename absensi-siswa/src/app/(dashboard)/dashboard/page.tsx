@@ -306,6 +306,7 @@ function DashboardSkeleton() {
 const LiveClock = memo(function LiveClock() {
   const [time, setTime] = useState<Date | null>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed clock on mount to avoid hydration mismatch
     setTime(new Date());
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);

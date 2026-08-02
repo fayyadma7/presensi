@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { School, Loader2, Eye, EyeOff } from "lucide-react";
-import DashboardContentSkeleton from "@/components/DashboardContentSkeleton";
+import PwaSplash from "@/components/PwaSplash";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,11 +55,7 @@ export default function LoginPage() {
   }
 
   if (redirecting) {
-    return (
-      <main className="min-h-screen max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-6 w-full">
-        <DashboardContentSkeleton />
-      </main>
-    );
+    return <PwaSplash />;
   }
 
   return (
