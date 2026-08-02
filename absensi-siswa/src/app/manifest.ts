@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
       "Sistem kehadiran siswa SMK Muhammadiyah 3 Purbalingga - Modern & Playful",
     start_url: "/",
     display: "standalone",
-    background_color: "#4F46E5",
+    background_color: "#EEF2FF",
     theme_color: "#4F46E5",
     lang: "id",
     orientation: "portrait",
