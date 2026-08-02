@@ -77,6 +77,7 @@ export default function Navbar() {
   }, []);
 
   async function handleLogout() {
+    window.localStorage.setItem("presensi:loggedOut", "1");
     beginLogout();
     await supabase.auth.signOut();
     router.replace("/login");

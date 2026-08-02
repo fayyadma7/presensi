@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { flushSync } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { School, Loader2, Eye, EyeOff } from "lucide-react";
 import PwaSplash from "@/components/PwaSplash";
+
+const LOGGED_OUT_KEY = "presensi:loggedOut";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +18,19 @@ export default function LoginPage() {
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Trap tombol kembali HP di halaman login: tekan back → tetap di login,
+  // tidak kembali ke halaman dashboard yang ter-cache di history.
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+
+    function handlePopState() {
+      window.history.pushState(null, "", window.location.href);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +47,8 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+
+    window.localStorage.removeItem(LOGGED_OUT_KEY);
 
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {

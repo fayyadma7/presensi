@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import Navbar from "@/components/Navbar";
@@ -11,14 +11,22 @@ import DashboardContentSkeleton from "@/components/DashboardContentSkeleton";
 import PwaSplash from "@/components/PwaSplash";
 import { createClient } from "@/lib/supabase/client";
 
+const LOGGED_OUT_KEY = "presensi:loggedOut";
+
 export default function DashboardShell({ children, userRole, isWaliKelas }: { children: ReactNode; userRole: string; isWaliKelas: boolean }) {
   const { pendingHref, isLoggingOut } = useNavigationTransition();
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
 
-  // Auth guard: cegah akses halaman dashboard via tombol kembali HP setelah logout
-  // (halaman ter-cache di client router tanpa re-render server layout)
+  // Flag sinkron: jika user baru saja logout, JANGAN render konten dashboard
+  // (mencegah flash halaman dashboard saat tombol kembali HP restore dari cache).
+  const [verified, setVerified] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return window.localStorage.getItem(LOGGED_OUT_KEY) !== "1";
+  });
+
+  // Auth guard: verifikasi sesi via getUser() (bukan context/prop yang bisa basi).
   useEffect(() => {
     let cancelled = false;
 
@@ -26,9 +34,14 @@ export default function DashboardShell({ children, userRole, isWaliKelas }: { ch
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!cancelled && !user) {
+      if (cancelled) return;
+      if (!user) {
         router.replace("/login");
+        return;
       }
+      window.localStorage.removeItem(LOGGED_OUT_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pulihkan tampilan normal setelah verifikasi sesi
+      setVerified(true);
     }
 
     verifySession();
@@ -37,7 +50,7 @@ export default function DashboardShell({ children, userRole, isWaliKelas }: { ch
     };
   }, [pathname, router, supabase]);
 
-  if (isLoggingOut) {
+  if (isLoggingOut || !verified) {
     return <PwaSplash />;
   }
 

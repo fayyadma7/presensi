@@ -11,6 +11,7 @@ export default function BottomNavWrapper({ userRole, isWaliKelas }: { userRole: 
   const { beginLogout } = useNavigationTransition();
 
   async function handleLogout() {
+    window.localStorage.setItem("presensi:loggedOut", "1");
     beginLogout();
     await supabase.auth.signOut();
     router.replace("/login");
