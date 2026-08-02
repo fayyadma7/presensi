@@ -32,7 +32,6 @@ interface GuruRecapData {
   name: string;
   email: string;
   hadir: number;
-  terlambat: number;
   sakit: number;
   izin: number;
   alpa: number;
@@ -68,11 +67,10 @@ function getTeacherAlpaCount(
 const StatusBadge = memo(function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
     hadir: { bg: "bg-success/10 border-success/20", text: "text-success", icon: <CheckCircle className="h-4 w-4" /> },
-    terlambat: { bg: "bg-warning/10 border-warning/20", text: "text-warning", icon: <Clock className="h-4 w-4" /> },
     izin: { bg: "bg-secondary/10 border-secondary/20", text: "text-secondary-foreground", icon: <Calendar className="h-4 w-4" /> },
     alpa: { bg: "bg-destructive/10 border-destructive/20", text: "text-destructive", icon: <XCircle className="h-4 w-4" /> },
   };
-  const labels: Record<string, string> = { hadir: "Hadir", terlambat: "Terlambat", izin: "Izin", alpa: "Alpa" };
+  const labels: Record<string, string> = { hadir: "Hadir", izin: "Izin", alpa: "Alpa" };
   const c = config[status] || config.alpa;
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold border-2 rounded-xl whitespace-nowrap ${c.bg} ${c.text}`}>
@@ -194,7 +192,7 @@ export default function AdminPresensiGuruPage() {
     const countMap: Record<string, Record<string, number>> = {};
     attData?.forEach((a: { teacher_id: string; status: string }) => {
       if (!countMap[a.teacher_id]) {
-        countMap[a.teacher_id] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+        countMap[a.teacher_id] = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
       }
       if (a.status in countMap[a.teacher_id]) {
         countMap[a.teacher_id][a.status]++;
@@ -202,7 +200,7 @@ export default function AdminPresensiGuruPage() {
     });
 
     const recap: GuruRecapData[] = usersData.map((u: { id: string; name: string; email: string }) => {
-      const counts = countMap[u.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+      const counts = countMap[u.id] || { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
       const teacherRecords = (attData || []).filter((a: TeacherAttendanceRecord) => a.teacher_id === u.id);
       return {
         teacher_id: u.id,
@@ -237,9 +235,8 @@ export default function AdminPresensiGuruPage() {
   const stats = useMemo(() => {
     const total = recapData.length;
     const totalHadir = recapData.reduce((sum, r) => sum + r.hadir, 0);
-    const totalTerlambat = recapData.reduce((sum, r) => sum + r.terlambat, 0);
     const totalAlpa = recapData.reduce((sum, r) => sum + r.alpa, 0);
-    return { total, totalHadir, totalTerlambat, totalAlpa };
+    return { total, totalHadir, totalAlpa };
   }, [recapData]);
 
   // ==================== EXPORT 1: HARIAN ====================
@@ -255,7 +252,7 @@ export default function AdminPresensiGuruPage() {
         .eq("date", today);
 
       const statusMap: Record<string, string> = {
-        hadir: "Hadir", terlambat: "Terlambat", sakit: "Sakit", izin: "Izin", alpa: "Alpa",
+        hadir: "Hadir", sakit: "Sakit", izin: "Izin", alpa: "Alpa",
       };
 
       const rows = (attData || []).map((a: Record<string, unknown>, i: number) => ({
@@ -290,7 +287,6 @@ export default function AdminPresensiGuruPage() {
         Nama: r.name,
         Email: r.email,
         Hadir: r.hadir,
-        Terlambat: r.terlambat,
         Sakit: r.sakit,
         Izin: r.izin,
         Alpa: r.alpa,
@@ -300,7 +296,7 @@ export default function AdminPresensiGuruPage() {
       const ws = XLSX.utils.json_to_sheet(rows);
       ws["!cols"] = [
         { wch: 5 }, { wch: 20 }, { wch: 25 },
-        { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
+        { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 },
       ];
       XLSX.utils.book_append_sheet(wb, ws, "Rekap Presensi Guru");
       XLSX.writeFile(wb, `rekap-presensi-guru-${startDate}-sd-${endDate}.xlsx`);
@@ -355,19 +351,18 @@ export default function AdminPresensiGuruPage() {
 
         const countMap: Record<string, Record<string, number>> = {};
         monthAtts.forEach((a: { teacher_id: string; status: string }) => {
-          if (!countMap[a.teacher_id]) countMap[a.teacher_id] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+          if (!countMap[a.teacher_id]) countMap[a.teacher_id] = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
           if (a.status in countMap[a.teacher_id]) countMap[a.teacher_id][a.status]++;
         });
 
         const rows = usersData.map((u: { id: string; name: string; email: string }, i: number) => {
-          const counts = countMap[u.id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+          const counts = countMap[u.id] || { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
           const teacherRecords = monthAtts.filter((a: TeacherAttendanceRecord) => a.teacher_id === u.id);
           return {
             No: i + 1,
             Nama: u.name,
             Email: u.email,
             Hadir: counts.hadir,
-            Terlambat: counts.terlambat,
             Sakit: counts.sakit,
             Izin: counts.izin,
             Alpa: getTeacherAlpaCount(teacherRecords, mStart, mEnd, holidays),
@@ -375,7 +370,7 @@ export default function AdminPresensiGuruPage() {
         });
 
         const ws = XLSX.utils.json_to_sheet(rows);
-        ws["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
+        ws["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
         XLSX.utils.book_append_sheet(wb, ws, label.substring(0, 31));
       }
 
@@ -384,7 +379,7 @@ export default function AdminPresensiGuruPage() {
         const d = new Date(a.date);
         const key = `${d.getFullYear()}-${d.getMonth()}`;
         if (!annualCountMap[a.teacher_id]) annualCountMap[a.teacher_id] = {};
-        if (!annualCountMap[a.teacher_id][key]) annualCountMap[a.teacher_id][key] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+        if (!annualCountMap[a.teacher_id][key]) annualCountMap[a.teacher_id][key] = { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
         if (a.status in annualCountMap[a.teacher_id][key]) annualCountMap[a.teacher_id][key][a.status]++;
       });
 
@@ -392,14 +387,13 @@ export default function AdminPresensiGuruPage() {
         const row: Record<string, string | number> = { No: i + 1, Nama: u.name, Email: u.email };
         for (const { year, month, label } of months) {
           const key = `${year}-${month}`;
-          const counts = annualCountMap[u.id]?.[key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, alpa: 0 };
+          const counts = annualCountMap[u.id]?.[key] || { hadir: 0, sakit: 0, izin: 0, alpa: 0 };
           const mStart = formatDateLocal(new Date(year, month, 1));
           const mEnd = formatDateLocal(new Date(year, month + 1, 0));
           const teacherRecords = (attData || []).filter((a: TeacherAttendanceRecord) => (
             a.teacher_id === u.id && a.date >= mStart && a.date <= mEnd
           ));
           row[`${label} Hadir`] = counts.hadir;
-          row[`${label} Terlambat`] = counts.terlambat;
           row[`${label} Sakit`] = counts.sakit;
           row[`${label} Izin`] = counts.izin;
           row[`${label} Alpa`] = getTeacherAlpaCount(teacherRecords, mStart, mEnd, holidays);
@@ -422,7 +416,6 @@ export default function AdminPresensiGuruPage() {
   function getStatusBadge(status: string, count: number) {
     const colors: Record<string, string> = {
       hadir: "text-success font-bold",
-      terlambat: "text-warning font-bold",
       sakit: "text-muted-foreground",
       izin: "text-muted-foreground",
       alpa: "text-destructive font-bold",
@@ -486,13 +479,6 @@ export default function AdminPresensiGuruPage() {
             <p className="text-sm font-bold text-muted-foreground">Total Hadir</p>
           </div>
           <p className="text-3xl font-heading font-bold text-success">{stats.totalHadir}</p>
-        </div>
-        <div className="clay-card p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-warning/10 rounded-xl"><Clock className="h-5 w-5 text-warning" /></div>
-            <p className="text-sm font-bold text-muted-foreground">Total Terlambat</p>
-          </div>
-          <p className="text-3xl font-heading font-bold text-warning">{stats.totalTerlambat}</p>
         </div>
         <div className="clay-card p-5">
           <div className="flex items-center gap-3 mb-2">
@@ -595,9 +581,8 @@ export default function AdminPresensiGuruPage() {
               <tr className="border-b border-border/50">
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap w-10">No</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Email</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Email</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Hadir</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Terlambat</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Sakit</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Izin</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Alpa</th>
@@ -608,10 +593,9 @@ export default function AdminPresensiGuruPage() {
               {recapData.map((r, i) => (
                 <tr key={r.teacher_id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
                   <td className="px-4 py-3 text-center text-sm text-muted-foreground">{i + 1}</td>
-                  <td className="px-4 py-3 font-medium">{r.name}</td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{r.email}</td>
+                  <td className="px-4 py-3 font-medium text-left">{r.name}</td>
+                  <td className="px-4 py-3 text-sm text-center text-muted-foreground">{r.email}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("hadir", r.hadir)}</td>
-                  <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("terlambat", r.terlambat)}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("sakit", r.sakit)}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("izin", r.izin)}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("alpa", r.alpa)}</td>
@@ -627,7 +611,7 @@ export default function AdminPresensiGuruPage() {
               ))}
               {recapData.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={8} className="text-center py-8 text-muted-foreground">
                     Tidak ada data guru
                   </td>
                 </tr>

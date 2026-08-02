@@ -244,7 +244,7 @@ export function SubjectAttendanceModal({
                       const currentStatus = subjectAttendanceMap[student.id];
                       return (
                         <tr key={student.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-left">
                             <p className="text-sm font-medium text-foreground">{student.name}</p>
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">

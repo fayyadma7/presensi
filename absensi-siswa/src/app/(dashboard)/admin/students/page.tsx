@@ -60,7 +60,7 @@ const StudentRow = memo(function StudentRow({
   return (
     <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
       <td className="px-4 py-3 font-mono text-sm text-center">{student.nis}</td>
-      <td className="px-4 py-3 font-medium">{student.name}</td>
+      <td className="px-4 py-3 font-medium text-left">{student.name}</td>
       <td className="px-4 py-3 whitespace-nowrap text-center">{student.classes?.name}</td>
       <td className="px-4 py-3 text-center hidden md:table-cell">{student.classes?.majors?.name}</td>
       <td className="px-4 py-3 text-center">
@@ -73,7 +73,7 @@ const StudentRow = memo(function StudentRow({
         </span>
       </td>
       <td className="px-4 py-3 text-center">
-        <div className="flex gap-1 justify-end">
+        <div className="flex gap-1 justify-center">
           <button
             onClick={() => onEdit(student)}
             className="w-8 h-8 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center cursor-pointer clay-transition"
@@ -680,15 +680,15 @@ export default function StudentsPage() {
                 <div className="max-h-[200px] overflow-y-auto border rounded-xl mb-4">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 sticky top-0">
-                      <tr><th className="px-3 py-2 text-left">NIS</th><th className="px-3 py-2 text-left">Nama</th><th className="px-3 py-2 text-left">Kelas</th><th className="px-3 py-2 text-left">Password</th></tr>
+                      <tr><th className="px-3 py-2 text-center">NIS</th><th className="px-3 py-2 text-left">Nama</th><th className="px-3 py-2 text-center">Kelas</th><th className="px-3 py-2 text-center">Password</th></tr>
                     </thead>
                     <tbody>
                       {importData.slice(0, 20).map((row, i) => (
                         <tr key={i} className="border-t border-border/50">
-                          <td className="px-3 py-2">{row.nis}</td>
-                          <td className="px-3 py-2">{row.name}</td>
-                          <td className="px-3 py-2">{row.className}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{row.nis.length >= 6 ? row.nis : row.nis.padStart(6, "0")}</td>
+                          <td className="px-3 py-2 text-center">{row.nis}</td>
+                          <td className="px-3 py-2 text-left">{row.name}</td>
+                          <td className="px-3 py-2 text-center">{row.className}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-center">{row.nis.length >= 6 ? row.nis : row.nis.padStart(6, "0")}</td>
                         </tr>
                       ))}
                     </tbody>

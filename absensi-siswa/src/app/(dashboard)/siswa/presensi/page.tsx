@@ -820,12 +820,12 @@ export default function SiswaPresensiPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Tanggal</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Waktu Masuk</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status Masuk</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Waktu Pulang</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Status Pulang</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Lokasi</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Tanggal</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Waktu Masuk</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status Masuk</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Waktu Pulang</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Status Pulang</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase">Lokasi</th>
               </tr>
             </thead>
             <tbody>
@@ -838,13 +838,13 @@ export default function SiswaPresensiPage() {
               )}
               {historyRecords.map((att) => (
                 <tr key={att.date} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
                     {att.date && new Date(att.date + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                   </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
                     {att.masuk_time ? new Date(att.masuk_time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center">
                     {att.masuk_status ? (
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
                           att.masuk_status === "hadir" && att.late_status === "terlambat" ? "bg-amber-100 text-amber-600" :
@@ -861,10 +861,10 @@ export default function SiswaPresensiPage() {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                  <td className="px-4 py-3 text-sm text-center whitespace-nowrap">
                     {att.pulang_time ? new Date(att.pulang_time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center">
                     {att.pulang_status ? (
                       <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-600">
                         Pulang

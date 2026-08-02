@@ -27,8 +27,8 @@ interface Teacher { id: string; email: string; name: string; role: string; }
 const TeacherRow = memo(function TeacherRow({ teacher, onEdit, onDelete }: { teacher: Teacher; onEdit: (t: Teacher) => void; onDelete: (id: string) => void; }) {
   return (
     <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-      <td className="px-4 py-3 font-medium">{teacher.name}</td>
-      <td className="px-4 py-3">{teacher.email}</td>
+      <td className="px-4 py-3 font-medium text-left">{teacher.name}</td>
+      <td className="px-4 py-3 text-center">{teacher.email}</td>
       <td className="px-4 py-3 text-center">
         <span className={`clay-badge px-2 py-0.5 text-xs font-bold ${
           teacher.role === "admin" ? "bg-primary/10 text-primary border-2 border-primary/20"
@@ -40,7 +40,7 @@ const TeacherRow = memo(function TeacherRow({ teacher, onEdit, onDelete }: { tea
         </span>
       </td>
       <td className="px-4 py-3 text-center">
-        <div className="flex gap-1 justify-end">
+        <div className="flex gap-1 justify-center">
           <button onClick={() => onEdit(teacher)} className="w-8 h-8 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center cursor-pointer clay-transition"><Pencil className="h-4 w-4" /></button>
           <button onClick={() => onDelete(teacher.id)} className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 flex items-center justify-center cursor-pointer clay-transition"><Trash2 className="h-4 w-4" /></button>
         </div>
@@ -351,9 +351,10 @@ export default function TeachersPage() {
               {(["name", "email"] as const).map((field) => {
                 const active = sortField === field;
                 const label = field === "name" ? "Nama" : "Email";
+                const align = field === "name" ? "text-left" : "text-center";
                 return (
-                  <th key={field} className="px-4 py-3 text-left text-xs font-bold text-muted-foreground">
-                    <button onClick={() => toggleSort(field)} className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
+                  <th key={field} className={"px-4 py-3 text-xs font-bold text-muted-foreground " + align}>
+                    <button onClick={() => toggleSort(field)} className={"flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer " + (field === "name" ? "justify-start" : "justify-center w-full")}>
                       {label}
                       {active ? (
                         sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
@@ -441,15 +442,15 @@ export default function TeachersPage() {
                 <div className="max-h-[200px] overflow-y-auto border rounded-xl mb-4">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 sticky top-0">
-                      <tr><th className="px-3 py-2 text-left">Email</th><th className="px-3 py-2 text-left">Nama</th><th className="px-3 py-2 text-left">Role</th><th className="px-3 py-2 text-left">Password</th></tr>
+                      <tr><th className="px-3 py-2 text-center">Email</th><th className="px-3 py-2 text-left">Nama</th><th className="px-3 py-2 text-center">Role</th><th className="px-3 py-2 text-center">Password</th></tr>
                     </thead>
                     <tbody>
                       {importData.slice(0, 20).map((row, i) => (
                         <tr key={i} className="border-t border-border/50">
-                          <td className="px-3 py-2">{row.email}</td>
-                          <td className="px-3 py-2">{row.name}</td>
-                          <td className="px-3 py-2 capitalize">{row.role}</td>
-                           <td className="px-3 py-2 font-mono text-xs">{row.role === "admin" ? `Admin${String(i + 1).padStart(3, "0")}` : row.role === "tenaga_kependidikan" ? `TK${String(i + 1).padStart(3, "0")}` : `Guru${String(i + 1).padStart(3, "0")}`}</td>
+                          <td className="px-3 py-2 text-center">{row.email}</td>
+                          <td className="px-3 py-2 text-left">{row.name}</td>
+                          <td className="px-3 py-2 capitalize text-center">{row.role}</td>
+                           <td className="px-3 py-2 font-mono text-xs text-center">{row.role === "admin" ? `Admin${String(i + 1).padStart(3, "0")}` : row.role === "tenaga_kependidikan" ? `TK${String(i + 1).padStart(3, "0")}` : `Guru${String(i + 1).padStart(3, "0")}`}</td>
                         </tr>
                       ))}
                     </tbody>

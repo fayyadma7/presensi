@@ -763,9 +763,9 @@ export default function RekapPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border/50">
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Kelas</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Kelas</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Hadir</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Terlambat</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Sakit</th>
@@ -777,9 +777,9 @@ export default function RekapPage() {
             <tbody>
               {recapData.map((r) => (
                 <tr key={r.student_id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                  <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">{r.nis}</td>
-                  <td className="px-4 py-3 font-medium">{r.name}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{r.className}</td>
+                  <td className="px-4 py-3 font-mono text-center text-sm whitespace-nowrap">{r.nis}</td>
+                  <td className="px-4 py-3 font-medium text-left">{r.name}</td>
+                  <td className="px-4 py-3 text-center whitespace-nowrap">{r.className}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("hadir", r.hadir)}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("terlambat", r.terlambat)}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("sakit", r.sakit)}</td>

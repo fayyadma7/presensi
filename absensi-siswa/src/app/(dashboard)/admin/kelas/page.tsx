@@ -55,18 +55,18 @@ const KelasRow = memo(function KelasRow({
 }) {
   return (
     <tr className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-      <td className="px-4 py-3 font-medium">{cls.name}</td>
-      <td className="px-4 py-3 hidden md:table-cell">{cls.majors?.name || "-"}</td>
-      <td className="px-4 py-3">{cls.grade_level}</td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-3 font-medium text-left">{cls.name}</td>
+      <td className="px-4 py-3 hidden md:table-cell text-center">{cls.majors?.name || "-"}</td>
+      <td className="px-4 py-3 text-center">{cls.grade_level}</td>
+      <td className="px-4 py-3 text-center">
         {cls.users?.name ? (
           <span className="clay-badge px-2 py-0.5 text-xs font-bold bg-primary/10 text-primary border-2 border-primary/20">{cls.users.name}</span>
         ) : (
           <span className="clay-badge px-2 py-0.5 text-xs bg-muted text-muted-foreground border-2 border-border">Belum ditugaskan</span>
         )}
       </td>
-      <td className="px-4 py-3 text-right">
-        <div className="flex gap-1 justify-end">
+      <td className="px-4 py-3 text-center">
+        <div className="flex gap-1 justify-center">
           <button
             onClick={() => onEdit(cls)}
             className="w-8 h-8 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center cursor-pointer clay-transition"
@@ -318,10 +318,10 @@ export default function KelasManagePage() {
             <thead>
               <tr className="border-b border-border/50">
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama Kelas</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase hidden md:table-cell">Jurusan</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Tingkat</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Wali Kelas</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase">Aksi</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase hidden md:table-cell">Jurusan</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Tingkat</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Wali Kelas</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody>

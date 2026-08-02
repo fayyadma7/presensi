@@ -191,10 +191,10 @@ export default function StudentListModal({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border/50 bg-muted/20">
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase w-12">No</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-12">No</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">NIS</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Kelas</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">NIS</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Kelas</th>
                       <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Waktu</th>
                       <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Status</th>
                     </tr>
@@ -202,10 +202,10 @@ export default function StudentListModal({
                   <tbody>
                     {paginated.map((s, i) => (
                       <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{(page - 1) * ROWS_PER_PAGE + i + 1}</td>
-                        <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                        <td className="px-4 py-3 font-mono text-sm text-foreground">{s.nis}</td>
-                        <td className="px-4 py-3 text-sm text-foreground">{s.class_name}</td>
+                        <td className="px-4 py-3 text-sm text-center text-muted-foreground">{(page - 1) * ROWS_PER_PAGE + i + 1}</td>
+                        <td className="px-4 py-3 font-medium text-left text-foreground">{s.name}</td>
+                        <td className="px-4 py-3 font-mono text-center text-sm text-foreground">{s.nis}</td>
+                        <td className="px-4 py-3 text-sm text-center text-foreground">{s.class_name}</td>
                         <td className="px-4 py-3 text-center text-sm text-foreground">{s.time || "-"}</td>
                         <td className="px-4 py-3 text-center">{statusBadge(s.status)}</td>
                       </tr>

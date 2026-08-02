@@ -25,6 +25,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { Skeleton, SkeletonStats, SkeletonChart, SkeletonTable } from "@/components/skeleton";
@@ -164,7 +165,6 @@ const StatCard = memo(function StatCard({
 const TeacherStatusBadge = memo(function TeacherStatusBadge({ status }: { status: string }) {
   const config: Record<string, { bg: string; text: string; label: string }> = {
     hadir: { bg: "bg-success/10 border-success/20", text: "text-success", label: "Hadir" },
-    terlambat: { bg: "bg-warning/10 border-warning/20", text: "text-warning", label: "Terlambat" },
     sakit: { bg: "bg-teal-100 border-teal-200", text: "text-teal-600", label: "Sakit" },
     izin: { bg: "bg-secondary/10 border-secondary/20", text: "text-secondary-foreground", label: "Izin" },
     alpa: { bg: "bg-destructive/10 border-destructive/20", text: "text-destructive", label: "Alpa" },
@@ -200,7 +200,6 @@ const TeacherTableRow = memo(function TeacherTableRow({
 
   const actionButtons = [
     { label: "Hadir", status: "hadir", color: "bg-success/10 text-success border-success/20 hover:bg-success/20" },
-    { label: "Terlambat", status: "terlambat", color: "bg-warning/10 text-warning border-warning/20 hover:bg-warning/20" },
     { label: "Sakit", status: "sakit", color: "bg-teal-100 text-teal-600 border-teal-200 hover:bg-teal-200" },
     { label: "Izin", status: "izin", color: "bg-purple-100 text-purple-600 border-purple-200 hover:bg-purple-200" },
     { label: "Alpa", status: "alpa", color: "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20" },
@@ -740,12 +739,12 @@ const closeScanner = () => {
     return () => { supabase.removeChannel(channel); };
   }, [supabase, userRole, holidays, fetchTeacherAttendance]);
 
-  const teacherStats = useMemo<TeacherStats>(() => {
+  const teacherStats = useMemo(() => {
     const total = teachers.length;
     const hadir = teachers.filter((t) => t.attendance?.status === "hadir").length;
-    const terlambat = teachers.filter((t) => t.attendance?.status === "terlambat").length;
-    const belumPresensi = teachers.filter((t) => !t.attendance).length;
-    return { total, hadir, terlambat, belumPresensi };
+    const belumPresensi = total - hadir;
+
+    return { total, hadir, belumPresensi };
   }, [teachers]);
 
   const nowHHMM = (() => {
@@ -776,8 +775,7 @@ const closeScanner = () => {
   const teacherStatCards = useMemo(() => [
     { title: "Total Guru", value: teacherStats.total, icon: Users, color: "text-blue-600", bgColor: "bg-blue-50", cardBg: "#EFF6FF" },
     { title: "Hadir", value: teacherStats.hadir, icon: CheckCircle, color: "text-emerald-600", bgColor: "bg-emerald-50", cardBg: "#ECFDF5" },
-    { title: "Terlambat", value: teacherStats.terlambat, icon: Clock, color: "text-amber-600", bgColor: "bg-amber-50", cardBg: "#FFFBEB" },
-    { title: "Belum Presensi", value: teacherStats.belumPresensi, icon: XCircle, color: "text-red-600", bgColor: "bg-red-50", cardBg: "#FEF2F2" },
+    { title: "Belum", value: teacherStats.belumPresensi, icon: AlertCircle, color: "text-slate-600", bgColor: "bg-slate-50", cardBg: "#F8FAFC" },
   ], [teacherStats]);
 
   const isGuru = userRole === "guru";
@@ -1038,7 +1036,7 @@ const closeScanner = () => {
                   <tr className="border-b border-border/50 bg-muted/30">
                     <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">No</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Guru</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Mapel</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Mapel</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Kelas</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Jadwal</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Status Guru</th>
@@ -1052,7 +1050,7 @@ const closeScanner = () => {
                     <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
                       <td className="px-4 py-3 text-center text-sm text-muted-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + i + 1}</td>
                       <td className="px-4 py-3 font-medium text-left">{s.teacher_name}</td>
-                      <td className="px-4 py-3 text-left">{s.subject_name}</td>
+                      <td className="px-4 py-3 text-center">{s.subject_name}</td>
                       <td className="px-4 py-3 text-center">{s.class_name}</td>
                       <td className="px-4 py-3 text-center font-mono text-sm">
                         {s.start_time?.slice(0, 5)}-{s.end_time?.slice(0, 5)}

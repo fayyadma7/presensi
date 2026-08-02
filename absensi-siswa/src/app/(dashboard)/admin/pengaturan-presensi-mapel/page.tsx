@@ -804,20 +804,20 @@ export default function PengaturanPresensiMapelPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border/50 bg-muted/30">
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase w-16">No</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Kode Mapel</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-16">No</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Kode Mapel</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama Mapel</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase w-28">Aksi</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-28">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedSubjects.map((s, i) => (
                       <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{(subjectPage - 1) * ROWS_PER_PAGE + i + 1}</td>
-                        <td className="px-4 py-3 font-mono text-sm font-bold">{s.code}</td>
-                        <td className="px-4 py-3 font-medium">{s.name}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex gap-1 justify-end">
+                        <td className="px-4 py-3 text-sm text-center text-muted-foreground">{(subjectPage - 1) * ROWS_PER_PAGE + i + 1}</td>
+                        <td className="px-4 py-3 font-mono text-center text-sm font-bold">{s.code}</td>
+                        <td className="px-4 py-3 font-medium text-left">{s.name}</td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex gap-1 justify-center">
                             <button
                               onClick={() => openEditSubject(s)}
                               className="w-8 h-8 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center cursor-pointer clay-transition"
@@ -887,22 +887,22 @@ export default function PengaturanPresensiMapelPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border/50 bg-muted/30">
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase w-16">No</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-16">No</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Guru</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Mapel</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Kelas</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase w-20">Aksi</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Mapel</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Kelas</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-20">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedGroupedPengampu.map((group, i) => (
                       <tr key={group.teacher_id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{(pengampuPage - 1) * ROWS_PER_PAGE + i + 1}</td>
-                        <td className="px-4 py-3 font-medium">{group.teacher_name}</td>
-                        <td className="px-4 py-3">{Array.from(group.subjects).join(", ")}</td>
-                        <td className="px-4 py-3">{Array.from(group.classes).join(", ")}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex gap-1 justify-end">
+                        <td className="px-4 py-3 text-sm text-center text-muted-foreground">{(pengampuPage - 1) * ROWS_PER_PAGE + i + 1}</td>
+                        <td className="px-4 py-3 font-medium text-left">{group.teacher_name}</td>
+                        <td className="px-4 py-3 text-center">{Array.from(group.subjects).join(", ")}</td>
+                        <td className="px-4 py-3 text-center">{Array.from(group.classes).join(", ")}</td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex gap-1 justify-center">
                             <button
                               onClick={() => openEditPengampu(group.teacher_id)}
                               className="w-8 h-8 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center cursor-pointer clay-transition"
@@ -994,28 +994,28 @@ export default function PengaturanPresensiMapelPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border/50 bg-muted/30">
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase w-16">No</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Hari</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Mapel</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-16">No</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Hari</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Mapel</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Guru</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Jam Mulai</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Jam Selesai</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Ruang</th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-muted-foreground uppercase w-20">Aksi</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Jam Mulai</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Jam Selesai</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Ruang</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase w-20">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedSchedules.map((s, i) => (
                       <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{(jadwalPage - 1) * ROWS_PER_PAGE + i + 1}</td>
-                        <td className="px-4 py-3 font-bold">{getDayName(s.day_of_week)}</td>
-                        <td className="px-4 py-3">{s.teacher_subjects?.subjects?.name || "—"}</td>
-                        <td className="px-4 py-3">{s.teacher_subjects?.teachers?.name || "—"}</td>
-                        <td className="px-4 py-3 font-mono text-sm">{s.start_time?.slice(0, 5)}</td>
-                        <td className="px-4 py-3 font-mono text-sm">{s.end_time?.slice(0, 5)}</td>
-                        <td className="px-4 py-3">{s.room || "—"}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex gap-1 justify-end">
+                        <td className="px-4 py-3 text-sm text-center text-muted-foreground">{(jadwalPage - 1) * ROWS_PER_PAGE + i + 1}</td>
+                        <td className="px-4 py-3 font-bold text-center">{getDayName(s.day_of_week)}</td>
+                        <td className="px-4 py-3 text-center">{s.teacher_subjects?.subjects?.name || "—"}</td>
+                        <td className="px-4 py-3 text-left">{s.teacher_subjects?.teachers?.name || "—"}</td>
+                        <td className="px-4 py-3 font-mono text-center text-sm">{s.start_time?.slice(0, 5)}</td>
+                        <td className="px-4 py-3 font-mono text-center text-sm">{s.end_time?.slice(0, 5)}</td>
+                        <td className="px-4 py-3 text-center">{s.room || "—"}</td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex gap-1 justify-center">
                             <button
                               onClick={() => openEditJadwal(s)}
                               className="w-8 h-8 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 flex items-center justify-center cursor-pointer clay-transition"

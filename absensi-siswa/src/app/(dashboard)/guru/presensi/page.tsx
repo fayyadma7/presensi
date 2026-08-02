@@ -511,7 +511,7 @@ export default function GuruPresensiPage() {
           teacher_id: userId,
           date: today,
           login_time: new Date().toISOString(),
-          status: isLate() ? "terlambat" : "hadir",
+          status: "hadir",
           location_lat: lat,
           location_lng: lng,
         },
@@ -631,14 +631,12 @@ export default function GuruPresensiPage() {
   function todayStatusBadge(status: string) {
     const variants: Record<string, string> = {
       hadir: "bg-green-100 text-green-600",
-      terlambat: "bg-amber-100 text-amber-600",
       sakit: "bg-blue-100 text-blue-600",
       izin: "bg-purple-100 text-purple-600",
       alpa: "bg-red-100 text-red-600",
     };
     const labels: Record<string, string> = {
       hadir: "Hadir",
-      terlambat: "Terlambat",
       sakit: "Sakit",
       izin: "Izin",
       alpa: "Alpa",
@@ -1213,7 +1211,6 @@ export default function GuruPresensiPage() {
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                   {[
                     { label: "Hadir", key: "hadir", color: "bg-success/10 text-success border-success/20" },
-                    { label: "Terlambat", key: "terlambat", color: "bg-warning/10 text-warning border-warning/20" },
                     { label: "Sakit", key: "sakit", color: "bg-blue-100 text-blue-600 border-blue-200" },
                     { label: "Izin", key: "izin", color: "bg-purple-100 text-purple-600 border-purple-200" },
                     { label: "Alpa", key: "alpa", color: "bg-destructive/10 text-destructive border-destructive/20" },
@@ -1234,10 +1231,10 @@ export default function GuruPresensiPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border/50">
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Tanggal</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Jam Masuk</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Jam Pulang</th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Status</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Tanggal</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Jam Masuk</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Jam Pulang</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Status</th>
                       <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Lokasi</th>
                     </tr>
                   </thead>
@@ -1257,16 +1254,16 @@ export default function GuruPresensiPage() {
                     ) : (
                       rekapData.map((record) => (
                         <tr key={record.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
-                          <td className="px-4 py-3 text-sm font-medium text-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm text-center font-medium text-foreground whitespace-nowrap">
                             {formatDate(record.date)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm text-center text-foreground whitespace-nowrap">
                             {record.login_time ? formatTime(record.login_time) : "-"}
                           </td>
-                          <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm text-center text-foreground whitespace-nowrap">
                             {record.logout_time ? formatTime(record.logout_time) : "-"}
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-4 py-3 text-center">
                             {todayStatusBadge(record.status)}
                           </td>
                           <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
@@ -1433,11 +1430,11 @@ export default function GuruPresensiPage() {
                   <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-border/50">
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Status</th>
                         <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Lokasi</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Aksi</th>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -841,13 +841,13 @@ export default function AdminPresensiSiswaPage() {
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap w-10">
                   No
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
                   NIS
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">
                   Nama
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
                   Kelas
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
@@ -879,11 +879,11 @@ export default function AdminPresensiSiswaPage() {
                   <td className="px-4 py-3 text-center text-sm text-muted-foreground">
                     {i + 1}
                   </td>
-                  <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
+                  <td className="px-4 py-3 font-mono text-center text-sm whitespace-nowrap">
                     {r.nis}
                   </td>
-                  <td className="px-4 py-3 font-medium">{r.name}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">{r.className}</td>
+                  <td className="px-4 py-3 font-medium text-left">{r.name}</td>
+                  <td className="px-4 py-3 text-center whitespace-nowrap">{r.className}</td>
                   <td className="px-4 py-3 text-center whitespace-nowrap">
                     {getStatusBadge("hadir", r.hadir)}
                   </td>
