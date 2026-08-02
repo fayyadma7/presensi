@@ -19,13 +19,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // Trap tombol kembali HP di halaman login: tekan back → tetap di login,
-  // tidak kembali ke halaman dashboard yang ter-cache di history.
+  // Tombol kembali di halaman login → keluar aplikasi (bukan stay di login,
+  // bukan kembali ke dashboard yang ter-cache di history).
+  // pushState menyediakan entry tambahan agar back pertama memicu popstate,
+  // lalu history.back() melangkah mundur terus hingga entry habis → browser keluar.
+  // Flash dashboard tercegah oleh flag presensi:loggedOut di DashboardShell.
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
 
     function handlePopState() {
-      window.history.pushState(null, "", window.location.href);
+      window.history.back();
     }
 
     window.addEventListener("popstate", handlePopState);
