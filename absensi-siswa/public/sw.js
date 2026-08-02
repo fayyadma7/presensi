@@ -1,4 +1,4 @@
-const CACHE_NAME = "presensi-pwa-v2";
+const CACHE_NAME = "presensi-pwa-v3";
 
 const PRECACHE_URLS = [
   "/icons/icon-192.png",

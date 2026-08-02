@@ -16,10 +16,9 @@ export default function PwaSplash() {
           <div className="absolute -inset-2 rounded-[28px] bg-[#4F46E5]/10 animate-pulse -z-10" />
         </div>
         <div className="text-center">
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Presensi SMK Muhammadiyah 3 Purbalingga
-          </h1>
-          <p className="font-body text-sm text-muted-foreground mt-1.5">Memuat…</p>
+          <h1 className="font-heading text-3xl font-bold text-[#4F46E5] leading-tight">Presensi</h1>
+          <p className="font-heading text-lg font-semibold text-foreground/70 mt-0.5 leading-tight">SMK Muhammadiyah 3 Purbalingga</p>
+          <p className="font-body text-sm text-muted-foreground mt-2">Memuat…</p>
         </div>
         <div className="w-28 h-1.5 rounded-full bg-[#4F46E5]/15 overflow-hidden">
           <div className="h-full w-1/2 rounded-full bg-[#4F46E5] animate-[loader_1s_ease-in-out_infinite]" />
