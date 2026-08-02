@@ -51,6 +51,33 @@ interface Student {
   name: string;
 }
 
+interface TeacherAttendanceRecord {
+  id: string;
+  teacher_id: string | null;
+  date: string;
+  login_time: string | null;
+  logout_time: string | null;
+  status: string;
+  location_lat: number | null;
+  location_lng: number | null;
+}
+
+interface ScheduleJoinRow {
+  id: string;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  day_of_week: number;
+  teacher_subject_id: string;
+  teacher_subjects: {
+    teacher_id: string;
+    subject_id: string;
+    class_id: string;
+    subjects: { name: string; code: string };
+    classes: { name: string };
+  };
+}
+
 import { SubjectAttendanceModal } from "@/components/SubjectAttendanceModal";
 
 interface Class {
@@ -305,7 +332,7 @@ export default function GuruPresensiPage() {
   const [todayIsSchoolDay, setTodayIsSchoolDay] = useState<boolean>(true);
   const [holidayName, setHolidayName] = useState<string | null>(null);
 
-  const [todayRecord, setTodayRecord] = useState<Record<string, any> | null>(null);
+  const [todayRecord, setTodayRecord] = useState<TeacherAttendanceRecord | null>(null);
   const [markingMasuk, setMarkingMasuk] = useState(false);
   const [markingPulang, setMarkingPulang] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<string>("idle");
@@ -343,7 +370,7 @@ export default function GuruPresensiPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   });
   const [rekapEndDate, setRekapEndDate] = useState(formatDateLocal());
-  const [rekapData, setRekapData] = useState<any[]>([]);
+  const [rekapData, setRekapData] = useState<TeacherAttendanceRecord[]>([]);
   const [rekapLoading, setRekapLoading] = useState(false);
 
   useEffect(() => {
@@ -353,6 +380,7 @@ export default function GuruPresensiPage() {
   }, [userRole, isWaliKelas, tab, router]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync pendingTab back to null
     if (pendingTab === tab) setPendingTab(null);
   }, [pendingTab, tab]);
 
@@ -686,7 +714,7 @@ export default function GuruPresensiPage() {
 
     if (!data) { setSchedules([]); return; }
 
-    const mapped: SubjectSchedule[] = data.map((s: any) => ({
+    const mapped: SubjectSchedule[] = data.map((s: ScheduleJoinRow) => ({
       id: s.id,
       start_time: s.start_time,
       end_time: s.end_time,
@@ -1223,7 +1251,7 @@ export default function GuruPresensiPage() {
                     ) : rekapData.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="text-center py-8 text-muted-foreground">
-                          Klik "Cari" untuk menampilkan data presensi
+                          Klik &quot;Cari&quot; untuk menampilkan data presensi
                         </td>
                       </tr>
                     ) : (

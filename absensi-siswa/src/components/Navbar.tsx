@@ -17,6 +17,7 @@ import {
   User,
   ChevronDown,
   Loader2,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/helpers";
 import { useNavigationTransition } from "@/contexts/NavigationContext";
@@ -25,7 +26,7 @@ type NavItemLink = {
   type: "link";
   href: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   roles: string[];
   waliOnly: boolean;
 };
@@ -33,10 +34,10 @@ type NavItemLink = {
 type NavItemDropdown = {
   type: "dropdown";
   label: string;
-  icon: any;
+  icon: LucideIcon;
   roles: string[];
   waliOnly: boolean;
-  items: { href: string; label: string; icon: any }[];
+  items: { href: string; label: string; icon: LucideIcon }[];
 };
 
 type NavItem = NavItemLink | NavItemDropdown;

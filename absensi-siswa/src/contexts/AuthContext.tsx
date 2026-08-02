@@ -46,6 +46,7 @@ export function AuthProvider({
 
   useEffect(() => {
     if (serverUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate auth state from server session
       setUser(serverUser);
       setUserRole(serverUserRole);
       setUserName(serverUserName);

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { CheckCircle, Clock, Calendar, XCircle, AlertTriangle, MapPin, User, LogIn, HeartPulse, FileText } from "lucide-react";
+import { CheckCircle, Clock, Calendar, XCircle, AlertTriangle, MapPin, User, LogIn, HeartPulse, FileText, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/helpers";
 
 interface StatusBadgeProps {
@@ -15,7 +15,7 @@ export const StatusBadge = memo(function StatusBadge({
   className,
   showIcon = true
 }: StatusBadgeProps) {
-  const config: Record<string, { bg: string; text: string; label: string; icon: any }> = {
+  const config: Record<string, { bg: string; text: string; label: string; icon: LucideIcon }> = {
     hadir: {
       bg: "bg-success/10 border-success/20",
       text: "text-success",

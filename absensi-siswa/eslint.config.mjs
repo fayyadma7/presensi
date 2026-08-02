@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Dev-only Node scripts, intentionally excluded from lint
+    "scripts/**/*.js",
   ]),
 ]);
 

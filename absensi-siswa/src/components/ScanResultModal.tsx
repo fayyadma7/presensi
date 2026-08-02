@@ -42,8 +42,38 @@ export default function ScanResultModal({
   const [currentTeacherName, setCurrentTeacherName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  function determineAutoStatus(
+    settingsMap: Record<string, string>,
+    existing: { status: string; type: string; time?: string } | null,
+  ): 'hadir' | 'terlambat' | 'pulang' | null {
+    const now = new Date();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    const morningStart = settingsMap.morning_start?.substring(0, 5) || '06:30';
+    const lateThreshold = settingsMap.late_threshold?.substring(0, 5) || '07:00';
+    const afternoonStart = settingsMap.afternoon_start?.substring(0, 5) || '12:00';
+    const afternoonEnd = settingsMap.afternoon_end?.substring(0, 5) || '14:00';
+    const autoLate = settingsMap.auto_late === 'true';
+
+    const sudahMasuk = existing?.type === 'berangkat';
+
+    if (sudahMasuk) {
+      if (currentTime >= afternoonStart && currentTime <= afternoonEnd) {
+        return 'pulang';
+      }
+      return null;
+    }
+
+    if (currentTime >= morningStart && currentTime <= afternoonEnd) {
+      return autoLate && currentTime > lateThreshold ? 'terlambat' : 'hadir';
+    }
+
+    return null;
+  }
+
   useEffect(() => {
     if (!isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset modal state when closing
       setStudent(null);
       setLoading(true);
       setAutoStatus(null);
@@ -92,7 +122,7 @@ export default function ScanResultModal({
 
           const className = Array.isArray(studentData.classes)
             ? studentData.classes[0]?.name || ''
-            : (studentData.classes as any)?.name || '';
+            : (studentData.classes as { name: string } | null)?.name || '';
 
           const studentInfo: StudentInfo = {
             id: studentData.id,
@@ -149,39 +179,6 @@ export default function ScanResultModal({
 
     init();
   }, [isOpen, scannedBarcode, supabase]);
-
-  function determineAutoStatus(
-    settingsMap: Record<string, string>,
-    existing: { status: string; type: string; time?: string } | null,
-  ): 'hadir' | 'terlambat' | 'pulang' | null {
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    
-    const morningStart = settingsMap.morning_start?.substring(0, 5) || '06:30';
-    const lateThreshold = settingsMap.late_threshold?.substring(0, 5) || '07:00';
-    const afternoonStart = settingsMap.afternoon_start?.substring(0, 5) || '12:00';
-    const afternoonEnd = settingsMap.afternoon_end?.substring(0, 5) || '14:00';
-    const autoLate = settingsMap.auto_late === 'true';
-
-    const sudahMasuk = existing?.type === 'berangkat';
-
-    if (sudahMasuk) {
-      // Already did morning attendance → pulang if in afternoon window
-      if (currentTime >= afternoonStart && currentTime <= afternoonEnd) {
-        return 'pulang';
-      }
-      // Already did morning but not afternoon yet → no valid action
-      return null;
-    }
-
-    // Has NOT done morning attendance → hadir/terlambat
-    if (currentTime >= morningStart && currentTime <= afternoonEnd) {
-      return autoLate && currentTime > lateThreshold ? 'terlambat' : 'hadir';
-    }
-
-    // Before school starts
-    return null;
-  }
 
   async function handleSave() {
     if (!student || !autoStatus) return;

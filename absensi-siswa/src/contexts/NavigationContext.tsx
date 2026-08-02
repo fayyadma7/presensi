@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { flushSync } from "react-dom";
 
@@ -29,15 +29,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const currentRouteKey = `${pathname}${searchParams.size ? `?${searchParams.toString()}` : ""}`;
-
-  useEffect(() => {
-    if (pendingHref && getRouteKey(pendingHref) === currentRouteKey) {
-      setPendingHref(null);
-    }
-  }, [currentRouteKey, pendingHref]);
+  const effectivePendingHref =
+    pendingHref && getRouteKey(pendingHref) === currentRouteKey ? null : pendingHref;
 
   const value = useMemo(() => ({
-    pendingHref,
+    pendingHref: effectivePendingHref,
     isLoggingOut,
     beginNavigation: (href: string) => {
       flushSync(() => setPendingHref(href));
@@ -45,7 +41,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     beginLogout: () => {
       flushSync(() => setIsLoggingOut(true));
     },
-  }), [isLoggingOut, pendingHref]);
+  }), [effectivePendingHref, isLoggingOut]);
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
 }

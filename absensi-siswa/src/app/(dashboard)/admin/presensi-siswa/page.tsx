@@ -73,10 +73,10 @@ function formatLogTime(value: unknown) {
 
 function formatDailyAttendanceLog(log: unknown) {
   if (!Array.isArray(log)) return "-";
-  const entries = log.filter((entry: any) => DAILY_LOG_ACTIONS.has(entry?.action));
+  const entries = log.filter((entry) => DAILY_LOG_ACTIONS.has(entry?.action));
   if (entries.length === 0) return "-";
 
-  return entries.map((entry: any) => {
+  return entries.map((entry) => {
     const action = String(entry.action).charAt(0).toUpperCase() + String(entry.action).slice(1);
     const actor = entry.source === "Mandiri"
       ? "Siswa"
@@ -92,7 +92,7 @@ function formatDailyAttendanceLog(log: unknown) {
 
 function formatSubjectAttendanceLog(log: unknown) {
   if (!Array.isArray(log) || log.length === 0) return "-";
-  return log.map((entry: any) => {
+  return log.map((entry) => {
     const status = String(entry?.status || "-");
     const label = status.charAt(0).toUpperCase() + status.slice(1);
     const teacher = entry?.teacher_name || "Guru";
@@ -157,15 +157,6 @@ export default function AdminPresensiSiswaPage() {
     selectedClass === "all"
       ? "Semua Kelas"
       : classes.find((c) => c.id === selectedClass)?.name || "Semua Kelas";
-
-  useEffect(() => {
-    if (!userId) return;
-    initPage();
-  }, [userId]);
-
-  useEffect(() => {
-    if (userId) fetchRecap();
-  }, [selectedClass, startDate, endDate, classes, userId]);
 
   async function initPage() {
     const { data } = await supabase.from("classes").select("id, name").order("name");
@@ -277,6 +268,17 @@ export default function AdminPresensiSiswaPage() {
     setLoading(false);
   }
 
+  useEffect(() => {
+    if (!userId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch initial data on mount
+    initPage();
+  }, [userId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- refetch when filters change
+    if (userId) fetchRecap();
+  }, [selectedClass, startDate, endDate, classes, userId]);
+
   async function exportHarian() {
     setExporting(true);
     setShowExportMenu(false);
@@ -311,7 +313,7 @@ export default function AdminPresensiSiswaPage() {
         .in("student_id", studentIds);
 
       const subjectAttMap: Record<string, string> = {};
-      subjectAttData?.forEach((sa: any) => {
+      subjectAttData?.forEach((sa: { student_id: string; log: unknown }) => {
         subjectAttMap[sa.student_id] = formatSubjectAttendanceLog(sa.log);
       });
 

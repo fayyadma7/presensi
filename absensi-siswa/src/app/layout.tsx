@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const baloo2 = localFont({
@@ -22,6 +23,15 @@ const comicNeue = localFont({
 export const metadata: Metadata = {
   title: "Presensi - SMK Muhammadiyah 3 Purbalingga",
   description: "Sistem kehadiran siswa SMK Muhammadiyah 3 Purbalingga - Modern & Playful",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
+};
+
+export const viewport = {
+  themeColor: "#4F46E5",
 };
 
 export default function RootLayout({
@@ -33,6 +43,7 @@ export default function RootLayout({
     <html lang="id" className={`h-full antialiased ${baloo2.variable} ${comicNeue.variable}`}>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Toaster position="top-center" richColors expand={true} />
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>

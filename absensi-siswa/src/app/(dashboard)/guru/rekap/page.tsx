@@ -125,9 +125,6 @@ export default function RekapPage() {
 
   const selectedClassName = selectedClass === "all" ? "Semua Kelas" : classes.find((c) => c.id === selectedClass)?.name || "Semua Kelas";
 
-  useEffect(() => { initPage(); }, [userId]);
-  useEffect(() => { fetchRecap(); }, [selectedClass, startDate, endDate, holidays]);
-
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -213,6 +210,11 @@ export default function RekapPage() {
     setLoading(false);
   }
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch initial data on mount
+  useEffect(() => { initPage(); }, [userId]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- refetch when filters change
+  useEffect(() => { fetchRecap(); }, [selectedClass, startDate, endDate, holidays]);
+
   // ==================== EXPORT 1: HARIAN ====================
   async function exportHarian() {
     setExporting(true);
@@ -248,10 +250,10 @@ export default function RekapPage() {
         .in("student_id", studentIds);
 
       const subjectAttMap: Record<string, string> = {};
-      subjectAttData?.forEach((sa: any) => {
+      subjectAttData?.forEach((sa: { student_id: string; log: unknown }) => {
         if (sa.log && Array.isArray(sa.log)) {
           const teacherMap: Record<string, string> = {};
-          sa.log.forEach((l: any) => {
+          sa.log.forEach((l) => {
             teacherMap[l.teacher_name] = l.status;
           });
           const summary = Object.entries(teacherMap)
@@ -433,7 +435,7 @@ export default function RekapPage() {
       const endYear = yearTo;
       const endMonth = monthTo;
 
-      let studentIds = recapData.map((r) => r.student_id);
+      const studentIds = recapData.map((r) => r.student_id);
       if (studentIds.length === 0) { setExporting(false); return; }
 
       // Calculate date range

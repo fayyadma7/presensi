@@ -42,7 +42,7 @@ interface TeacherSubject {
   class_id: string;
   teachers?: { name: string };
   subjects?: { name: string; code: string };
-  classes?: { name: string };
+  classes?: { name: string; id?: string };
 }
 
 interface Schedule {
@@ -59,7 +59,7 @@ interface Schedule {
     class_id: string;
     teachers?: { name: string };
     subjects?: { name: string; code: string };
-    classes?: { name: string };
+    classes?: { name: string; id?: string };
   };
 }
 
@@ -179,6 +179,7 @@ export default function PengaturanPresensiMapelPage() {
   }, [supabase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch data when tab changes
     if (tab === "pengampu") fetchTeacherSubjects();
     if (tab === "jadwal") { fetchTeacherSubjects(); fetchSchedules(); }
     setSubjectPage(1);
@@ -187,14 +188,17 @@ export default function PengaturanPresensiMapelPage() {
   }, [tab, fetchTeacherSubjects, fetchSchedules]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync pendingTab back to null
     if (pendingTab === tab) setPendingTab(null);
   }, [pendingTab, tab]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset page when class changes
     setPengampuPage(1);
   }, [selectedClass]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset page when class changes
     setJadwalPage(1);
   }, [selectedClass]);
 
@@ -212,10 +216,9 @@ export default function PengaturanPresensiMapelPage() {
   }
 
   function getPengampuLabel(ts: TeacherSubject) {
-    const t = ts as any;
-    const guru = t.teachers?.name || "(tanpa guru)";
-    const mapel = t.subjects?.name || t.subject_id?.slice(0, 8) || "(tanpa mapel)";
-    const kelas = t.classes?.name || t.class_id?.slice(0, 8) || "(tanpa kelas)";
+    const guru = ts.teachers?.name || "(tanpa guru)";
+    const mapel = ts.subjects?.name || ts.subject_id?.slice(0, 8) || "(tanpa mapel)";
+    const kelas = ts.classes?.name || ts.class_id?.slice(0, 8) || "(tanpa kelas)";
     return `${mapel} - ${guru} - ${kelas}`;
   }
 
@@ -568,7 +571,7 @@ export default function PengaturanPresensiMapelPage() {
         a.start < b.end && a.end > b.start;
 
       const bentrokKelas =
-        schedules.some((s: any) => {
+        schedules.some((s) => {
           if (editingJadwal && s.id === editingJadwal?.id) return false;
           return (
             s.teacher_subjects?.class_id === classData.id &&
@@ -587,7 +590,7 @@ export default function PengaturanPresensiMapelPage() {
       }
 
       const bentrokGuru =
-        schedules.some((s: any) => {
+        schedules.some((s) => {
           if (editingJadwal && s.id === editingJadwal?.id) return false;
           return (
             s.teacher_subjects?.teacher_id === userData.id &&
@@ -686,22 +689,22 @@ export default function PengaturanPresensiMapelPage() {
   }
 
   const filteredPengampu = selectedClass
-    ? teacherSubjects.filter((ts: any) => ts.classes?.id === selectedClass || ts.class_id === selectedClass)
+    ? teacherSubjects.filter((ts) => ts.classes?.id === selectedClass || ts.class_id === selectedClass)
     : teacherSubjects;
 
   const filteredSchedules = selectedClass
-    ? schedules.filter((s: any) => {
+    ? schedules.filter((s) => {
         const cls = s.teacher_subjects?.classes;
         return cls?.id === selectedClass || s.teacher_subjects?.class_id === selectedClass;
       })
     : schedules;
 
   const filteredPengampuOptions = selectedClass
-    ? teacherSubjects.filter((ts: any) => ts.classes?.id === selectedClass || ts.class_id === selectedClass)
+    ? teacherSubjects.filter((ts) => ts.classes?.id === selectedClass || ts.class_id === selectedClass)
     : teacherSubjects;
 
   const groupedPengampu = Object.values(
-    filteredPengampu.reduce((acc, ts: any) => {
+    filteredPengampu.reduce((acc, ts) => {
       const key = ts.teacher_id;
       if (!acc[key]) {
         acc[key] = { teacher_id: key, teacher_name: ts.teachers?.name || "—", subjects: new Set(), classes: new Set() };
@@ -1002,7 +1005,7 @@ export default function PengaturanPresensiMapelPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedSchedules.map((s: any, i) => (
+                    {paginatedSchedules.map((s, i) => (
                       <tr key={s.id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
                         <td className="px-4 py-3 text-sm text-muted-foreground">{(jadwalPage - 1) * ROWS_PER_PAGE + i + 1}</td>
                         <td className="px-4 py-3 font-bold">{getDayName(s.day_of_week)}</td>
@@ -1183,7 +1186,7 @@ export default function PengaturanPresensiMapelPage() {
                         className="clay-input w-full px-4 py-2.5 outline-none cursor-pointer"
                       >
                         <option value="">Pilih pengampu</option>
-                        {filteredPengampuOptions.map((ts: any) => (
+                        {filteredPengampuOptions.map((ts) => (
                           <option key={ts.id} value={ts.id}>
                             {ts.subjects?.name || "—"} - {ts.teachers?.name || "—"} - {ts.classes?.name || "—"}
                           </option>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, ClipboardCheck, User, LogOut, Loader2, Users, Settings, GraduationCap } from "lucide-react";
+import { Home, ClipboardCheck, User, LogOut, Loader2, Users, Settings, GraduationCap, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/helpers";
 import { useNavigationTransition } from "@/contexts/NavigationContext";
 
@@ -15,7 +15,7 @@ type BottomNavItemLink = {
   type: "link";
   href: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   roles: string[];
   waliOnly: boolean;
 };
@@ -23,10 +23,10 @@ type BottomNavItemLink = {
 type BottomNavItemPopup = {
   type: "popup";
   label: string;
-  icon: any;
+  icon: LucideIcon;
   roles: string[];
   waliOnly: boolean;
-  items: { href: string; label: string; icon: any }[];
+  items: { href: string; label: string; icon: LucideIcon }[];
 };
 
 type BottomNavItem = BottomNavItemLink | BottomNavItemPopup;

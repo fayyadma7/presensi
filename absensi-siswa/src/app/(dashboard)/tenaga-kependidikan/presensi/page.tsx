@@ -34,6 +34,17 @@ interface Settings {
   geofence_radius: string;
 }
 
+interface TeacherAttendanceRecord {
+  id: string;
+  teacher_id: string | null;
+  date: string;
+  login_time: string | null;
+  logout_time: string | null;
+  status: string;
+  location_lat: number | null;
+  location_lng: number | null;
+}
+
 function ProfilSkeleton() {
   return (
     <>
@@ -64,7 +75,7 @@ export default function TenagaKependidikanPresensiPage() {
   const [todayIsSchoolDay, setTodayIsSchoolDay] = useState<boolean>(true);
   const [holidayName, setHolidayName] = useState<string | null>(null);
 
-  const [todayRecord, setTodayRecord] = useState<Record<string, any> | null>(null);
+  const [todayRecord, setTodayRecord] = useState<TeacherAttendanceRecord | null>(null);
   const [markingMasuk, setMarkingMasuk] = useState(false);
   const [markingPulang, setMarkingPulang] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<string>("idle");
@@ -92,7 +103,7 @@ export default function TenagaKependidikanPresensiPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   });
   const [rekapEndDate, setRekapEndDate] = useState(formatDateLocal());
-  const [rekapData, setRekapData] = useState<any[]>([]);
+  const [rekapData, setRekapData] = useState<TeacherAttendanceRecord[]>([]);
   const [rekapLoading, setRekapLoading] = useState(false);
 
   useEffect(() => {
@@ -678,7 +689,7 @@ export default function TenagaKependidikanPresensiPage() {
                 ) : rekapData.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-8 text-muted-foreground">
-                      Klik "Cari" untuk menampilkan data presensi
+                      Klik &quot;Cari&quot; untuk menampilkan data presensi
                     </td>
                   </tr>
                 ) : (

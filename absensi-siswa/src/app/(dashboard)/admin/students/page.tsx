@@ -283,7 +283,7 @@ export default function StudentsPage() {
       classesData?.forEach((c: { id: string; name: string }) => { classMap[c.id] = c.name; });
 
       const rows = students.map((s: { nis: string; name: string; email: string | null; status: string; classes?: { name: string } | null; class_id?: string }, i: number) => {
-        let className = s.classes?.name || "";
+        const className = s.classes?.name || "";
         return {
           No: i + 1,
           NIS: s.nis,
@@ -326,7 +326,7 @@ export default function StudentsPage() {
       const dateStr = formatDateLocal();
 
       for (const student of students) {
-        const className = Array.isArray(student.classes) ? student.classes[0]?.name || "" : (student.classes as any)?.name || "";
+        const className = Array.isArray(student.classes) ? student.classes[0]?.name || "" : (student.classes as { name: string } | null)?.name || "";
         const nis = student.nis;
         const name = student.name;
 

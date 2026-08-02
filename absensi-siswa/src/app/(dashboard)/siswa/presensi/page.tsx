@@ -97,13 +97,6 @@ export default function SiswaPresensiPage() {
   const [markingSakit, setMarkingSakit] = useState(false);
   const [markingIzin, setMarkingIzin] = useState(false);
 
-  useEffect(() => {
-    if (userId) {
-      initPage();
-      fetchGPS();
-    }
-  }, [userId]);
-
   const fetchGPS = useCallback(async () => {
     setGpsStatus("checking");
     const result = await getCurrentPosition();
@@ -166,6 +159,14 @@ export default function SiswaPresensiPage() {
 
     setLoading(false);
   }
+
+  useEffect(() => {
+    if (userId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch initial data on mount
+      initPage();
+      fetchGPS();
+    }
+  }, [userId]);
 
   function getTimeFromSettings(timeStr: string): string {
     return timeStr?.substring(0, 5) || "";
@@ -264,6 +265,7 @@ export default function SiswaPresensiPage() {
 
   // Fetch history when page changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- refetch history when page changes
     fetchHistory();
   }, [fetchHistory]);
 

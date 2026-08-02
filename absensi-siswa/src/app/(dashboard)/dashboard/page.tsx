@@ -100,8 +100,24 @@ interface SubjectTeacherRecord {
   class_name: string;
   teacher_name: string;
   teacher_id: string;
+  class_id: string;
   teacher_attendance_status: string | null;
   created_at: string | null;
+}
+
+interface ScheduleJoinRow {
+  id: string;
+  start_time: string;
+  end_time: string;
+  room: string | null;
+  teacher_subjects: {
+    teacher_id: string;
+    subject_id: string;
+    class_id: string;
+    subjects: { name: string };
+    classes: { name: string };
+    users: { name: string };
+  };
 }
 
 interface ClassInfo {
@@ -288,11 +304,13 @@ function DashboardSkeleton() {
 }
 
 const LiveClock = memo(function LiveClock() {
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
   useEffect(() => {
+    setTime(new Date());
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+  if (!time) return <div className="text-right text-xs text-muted-foreground leading-tight block ml-auto" />;
   return (
     <div className="text-right text-xs text-muted-foreground leading-tight block ml-auto">
       <div>{time.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
@@ -346,7 +364,7 @@ export default function DashboardPage() {
   const [scanResultOpen, setScanResultOpen] = useState(false);
   const [dashboardSubjectAttendanceModal, setDashboardSubjectAttendanceModal] = useState<{
     open: boolean;
-    schedule: any | null;
+    schedule: SubjectTeacherRecord | null;
   }>({ open: false, schedule: null });
   const initializedClassId = useRef<string | null>(null);
 
@@ -397,7 +415,7 @@ const closeScanner = () => {
 
     if (!data) { setSubjectTeachers([]); return; }
 
-    const mapped: SubjectTeacherRecord[] = data.map((s: any) => ({
+    const mapped: SubjectTeacherRecord[] = data.map((s: ScheduleJoinRow) => ({
       id: s.id,
       start_time: s.start_time,
       end_time: s.end_time,

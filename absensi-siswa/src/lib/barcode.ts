@@ -35,7 +35,7 @@ export function generateBarcodeSVG(nis: string, options?: {
     });
 
     // Convert canvas to SVG
-    const svg = canvasToSVG(canvas, barcodeValue);
+    const svg = canvasToSVG(canvas);
     return svg;
   } catch (e) {
     console.error('Barcode generation failed:', e);
@@ -46,7 +46,7 @@ export function generateBarcodeSVG(nis: string, options?: {
 /**
  * Convert canvas to SVG string
  */
-function canvasToSVG(canvas: HTMLCanvasElement, barcodeValue: string): string {
+function canvasToSVG(canvas: HTMLCanvasElement): string {
   const dataUrl = canvas.toDataURL('image/png');
   const width = canvas.width;
   const height = canvas.height;

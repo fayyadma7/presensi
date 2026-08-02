@@ -33,20 +33,6 @@ export default function BarcodeScannerModal({ isOpen, onClose, onScan }: Barcode
     onScanRef.current = onScan;
   }, [onScan]);
 
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setError(null);
-      setHasPermission(false);
-      setScanning(false);
-      setDevices([]);
-      setSelectedDeviceId('');
-      initDoneRef.current = false;
-    } else {
-      cleanup();
-    }
-  }, [isOpen]);
-
   const cleanup = useCallback(() => {
     if (controlsRef.current) {
       try { controlsRef.current.stop(); } catch {}
@@ -65,6 +51,21 @@ export default function BarcodeScannerModal({ isOpen, onClose, onScan }: Barcode
     setTorchAvailable(false);
     setTorchOn(false);
   }, []);
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset scanner state when opening
+      setError(null);
+      setHasPermission(false);
+      setScanning(false);
+      setDevices([]);
+      setSelectedDeviceId('');
+      initDoneRef.current = false;
+    } else {
+      cleanup();
+    }
+  }, [isOpen, cleanup]);
 
   // Initialize camera once when modal opens
   useEffect(() => {
@@ -99,12 +100,13 @@ export default function BarcodeScannerModal({ isOpen, onClose, onScan }: Barcode
         const rearCam = cams.find(d => /back|rear|environment/i.test(d.label));
         const defaultCam = rearCam || cams[0];
         setSelectedDeviceId(defaultCam.deviceId);
-      } catch (e: any) {
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
         console.error('[Scanner] Init error:', e);
-        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           setError('Izin kamera ditolak. Buka pengaturan browser untuk mengizinkan.');
         } else {
-          setError('Gagal menginisialisasi kamera: ' + e.message);
+          setError('Gagal menginisialisasi kamera: ' + err.message);
         }
       }
     }
@@ -175,15 +177,16 @@ export default function BarcodeScannerModal({ isOpen, onClose, onScan }: Barcode
         if (track && 'torch' in track.getSettings()) {
           setTorchAvailable(true);
         }
-      } catch (e: any) {
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
         console.error('[Scanner] Start error:', e);
         if (!cancelled) {
-          if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
             setError('Izin kamera ditolak.');
-          } else if (e.name === 'NotFoundError') {
+          } else if (err.name === 'NotFoundError') {
             setError('Kamera tidak ditemukan.');
           } else {
-            setError('Gagal memulai scanner: ' + e.message);
+            setError('Gagal memulai scanner: ' + err.message);
           }
           setScanning(false);
         }

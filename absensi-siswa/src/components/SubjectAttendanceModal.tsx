@@ -13,6 +13,12 @@ interface Student {
   name: string;
 }
 
+interface SubjectLogEntry {
+  teacher_name?: string;
+  status?: string;
+  time?: string;
+}
+
 interface SubjectSchedule {
   id: string;
   subject_name: string;
@@ -47,12 +53,6 @@ export function SubjectAttendanceModal({
 
   const supabase = createClient();
 
-  useEffect(() => {
-    if (open && schedule) {
-      fetchData();
-    }
-  }, [open, schedule]);
-
   async function fetchData() {
     if (!schedule) return;
     
@@ -77,11 +77,11 @@ export function SubjectAttendanceModal({
         .in("student_id", studentIds);
 
       const timeMap: Record<string, string> = {};
-      saData?.forEach((a: { student_id: string; status: string; log?: any[] }) => {
+      saData?.forEach((a: { student_id: string; status: string; log?: SubjectLogEntry[] }) => {
         attMap[a.student_id] = a.status;
         if (a.log && Array.isArray(a.log) && a.log.length > 0) {
           const logs = [...a.log].reverse();
-          const tLog = logs.find((l: any) => l.teacher_name === currentTeacherName) || logs[0];
+          const tLog = logs.find((l) => l.teacher_name === currentTeacherName) || logs[0];
           if (tLog && tLog.time) {
             const d = new Date(tLog.time);
             timeMap[a.student_id] = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -106,6 +106,13 @@ export function SubjectAttendanceModal({
 
     setSubjectAttendanceMap(attMap);
   }
+
+  useEffect(() => {
+    if (open && schedule) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch data when modal opens
+      fetchData();
+    }
+  }, [open, schedule]);
 
   async function markSubjectAttendance(studentId: string, status: string) {
     if (readOnly || !schedule) return;

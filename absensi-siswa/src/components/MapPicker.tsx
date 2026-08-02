@@ -87,6 +87,7 @@ export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps
     const pl = parseFloat(lat) || -7.4212;
     const pn = parseFloat(lng) || 109.4418;
     if (isValidLat(pl) && isValidLng(pn)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sync internal valid coords from props
       setValidLat(pl);
       setValidLng(pn);
     }

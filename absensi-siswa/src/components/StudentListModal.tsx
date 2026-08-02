@@ -68,6 +68,7 @@ export default function StudentListModal({
 
   useEffect(() => {
     if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset page when opening
     setPage(1);
     let cancelled = false;
 
@@ -103,7 +104,7 @@ export default function StudentListModal({
         }
       });
 
-      let result: StudentRecord[] = (studentRes.data || []).map((s: any) => ({
+      let result: StudentRecord[] = (studentRes.data || []).map((s: { id: string; name: string; nis: string; class: { name: string } | null }) => ({
         id: s.id,
         name: s.name,
         nis: s.nis,
