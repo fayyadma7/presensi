@@ -13,7 +13,7 @@ export default function BottomNavWrapper({ userRole, isWaliKelas }: { userRole: 
   async function handleLogout() {
     beginLogout();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.replace("/login");
   }
 
   return <BottomNav onLogout={handleLogout} userRole={userRole} isWaliKelas={isWaliKelas} />;

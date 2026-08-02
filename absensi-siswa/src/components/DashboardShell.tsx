@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
@@ -7,9 +9,33 @@ import Footer from "@/components/Footer";
 import { useNavigationTransition } from "@/contexts/NavigationContext";
 import DashboardContentSkeleton from "@/components/DashboardContentSkeleton";
 import PwaSplash from "@/components/PwaSplash";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardShell({ children, userRole, isWaliKelas }: { children: ReactNode; userRole: string; isWaliKelas: boolean }) {
   const { pendingHref, isLoggingOut } = useNavigationTransition();
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+
+  // Auth guard: cegah akses halaman dashboard via tombol kembali HP setelah logout
+  // (halaman ter-cache di client router tanpa re-render server layout)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function verifySession() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!cancelled && !user) {
+        router.replace("/login");
+      }
+    }
+
+    verifySession();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, router, supabase]);
 
   if (isLoggingOut) {
     return <PwaSplash />;

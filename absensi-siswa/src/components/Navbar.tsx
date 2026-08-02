@@ -79,7 +79,7 @@ export default function Navbar() {
   async function handleLogout() {
     beginLogout();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.replace("/login");
   }
 
   const filteredNav = navItems.filter((item) => {

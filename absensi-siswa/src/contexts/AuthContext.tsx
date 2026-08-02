@@ -62,7 +62,7 @@ export function AuthProvider({
       } = await supabase.auth.getUser();
 
       if (error || !authUser) {
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
@@ -87,7 +87,7 @@ export function AuthProvider({
           setUser(null);
           setUserRole("");
           setUserName("");
-          router.push("/login");
+          router.replace("/login");
         }
       }
     );
