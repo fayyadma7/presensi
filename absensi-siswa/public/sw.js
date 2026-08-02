@@ -1,4 +1,4 @@
-const CACHE_NAME = "presensi-pwa-v1";
+const CACHE_NAME = "presensi-pwa-v2";
 
 const PRECACHE_URLS = [
   "/icons/icon-192.png",
@@ -26,6 +26,12 @@ const OFFLINE_HTML = `<!doctype html>
 </div>
 </body>
 </html>`;
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

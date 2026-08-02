@@ -7,7 +7,18 @@ export default function ServiceWorkerRegister() {
     if (!("serviceWorker" in navigator)) return;
 
     const register = () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/sw.js").then((reg) => {
+        reg.addEventListener("updatefound", () => {
+          const installing = reg.installing;
+          if (installing) {
+            installing.addEventListener("statechange", () => {
+              if (installing.state === "installed" && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: "SKIP_WAITING" });
+              }
+            });
+          }
+        });
+      }).catch(() => {});
     };
 
     window.addEventListener("load", register);
