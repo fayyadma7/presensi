@@ -140,16 +140,16 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
                   className={cn(
                     "flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] clay-transition",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-white/15 text-white"
+                      : "text-white/80 hover:text-white"
                   )}
                 >
                   <div
                     className={cn(
                       "p-2 rounded-xl clay-transition",
                       active
-                        ? "bg-primary text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)]"
-                        : "bg-muted"
+                        ? "bg-white text-primary shadow-[0_4px_12px_rgba(255,255,255,0.35)]"
+                        : "bg-white/15 text-white"
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -172,16 +172,16 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
                     className={cn(
                       "flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] clay-transition",
                       active || isOpen
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-white/15 text-white"
+                        : "text-white/80 hover:text-white"
                     )}
                   >
                     <div
                       className={cn(
                         "p-2 rounded-xl clay-transition",
                         active || isOpen
-                          ? "bg-primary text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)]"
-                          : "bg-muted"
+                          ? "bg-white text-primary shadow-[0_4px_12px_rgba(255,255,255,0.35)]"
+                          : "bg-white/15 text-white"
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -226,9 +226,9 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
           <button
             onClick={onLogout}
             disabled={isLoggingOut}
-            className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] text-muted-foreground hover:text-destructive clay-transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-2xl min-w-[64px] text-white/80 hover:text-red-300 clay-transition disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <div className="p-2 rounded-xl bg-muted hover:bg-destructive/10 clay-transition">
+            <div className="p-2 rounded-xl bg-white/15 text-white hover:bg-red-500/25 clay-transition">
               {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <LogOut className="h-5 w-5" />}
             </div>
             <span className="text-[10px] font-bold">{isLoggingOut ? "Keluar..." : "Keluar"}</span>
