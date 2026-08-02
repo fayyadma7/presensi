@@ -198,7 +198,6 @@ export default function BottomNav({ onLogout, userRole, isWaliKelas }: BottomNav
                         return (
                           <button
                             key={sub.href}
-                            onPointerDown={() => navigateTo(sub.href)}
                             onMouseEnter={() => router.prefetch(sub.href)}
                             onClick={(event) => {
                               event.preventDefault();

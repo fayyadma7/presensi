@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { useNavigationTransition } from "@/contexts/NavigationContext";
 
 const Select = dynamic(() => import("@/components/ui/select").then((m) => m.Select), { ssr: false });
 const SelectContent = dynamic(() => import("@/components/ui/select").then((m) => m.SelectContent), { ssr: false });
@@ -131,6 +132,7 @@ export default function AdminPresensiSiswaPage() {
   const supabase = createClient();
   const { userId } = useAuth();
   const router = useRouter();
+  const { beginNavigation } = useNavigationTransition();
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [selectedClass, setSelectedClass] = useState("all");
@@ -695,7 +697,7 @@ export default function AdminPresensiSiswaPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => router.push("/admin/students")}
+          onClick={() => { beginNavigation("/admin/students"); router.push("/admin/students"); }}
           className="p-2.5 hover:bg-muted rounded-xl transition-colors cursor-pointer"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import Navbar from "@/components/Navbar";
 import BottomNavWrapper from "@/components/BottomNavWrapper";
@@ -15,7 +15,6 @@ const LOGGED_OUT_KEY = "presensi:loggedOut";
 
 export default function DashboardShell({ children, userRole, isWaliKelas }: { children: ReactNode; userRole: string; isWaliKelas: boolean }) {
   const { pendingHref, isLoggingOut } = useNavigationTransition();
-  const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
 
@@ -27,6 +26,8 @@ export default function DashboardShell({ children, userRole, isWaliKelas }: { ch
   });
 
   // Auth guard: verifikasi sesi via getUser() (bukan context/prop yang bisa basi).
+  // Hanya dijalankan sekali saat mount — tidak perlu re-run setiap navigasi
+  // (NavigationContext sudah menangani clear pendingHref saat URL berubah).
   useEffect(() => {
     let cancelled = false;
 
@@ -48,7 +49,8 @@ export default function DashboardShell({ children, userRole, isWaliKelas }: { ch
     return () => {
       cancelled = true;
     };
-  }, [pathname, router, supabase]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isLoggingOut || !verified) {
     return <PwaSplash />;
