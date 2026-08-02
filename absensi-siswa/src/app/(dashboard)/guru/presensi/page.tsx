@@ -23,6 +23,7 @@ import {
   HeartPulse,
   FileText,
   RefreshCw,
+  ArrowUpDown,
 } from "lucide-react";
 import { getCurrentPosition, isWithinSchool } from "@/lib/geofencing";
 import { getDeviceFingerprint } from "@/lib/device";
@@ -331,6 +332,8 @@ export default function GuruPresensiPage() {
   const [holidays, setHolidays] = useState<string[]>([]);
   const [todayIsSchoolDay, setTodayIsSchoolDay] = useState<boolean>(true);
   const [holidayName, setHolidayName] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<"nis" | "name" | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const [todayRecord, setTodayRecord] = useState<TeacherAttendanceRecord | null>(null);
   const [markingMasuk, setMarkingMasuk] = useState(false);
@@ -868,6 +871,30 @@ export default function GuruPresensiPage() {
   }
 
   const selectedClassName = classes.find((c) => c.id === selectedClass)?.name || "";
+
+  function handleSort(field: "nis" | "name") {
+    if (sortField === field) {
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortField(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  }
+
+  const sortedStudents = useMemo(() => {
+    return [...students].sort((a, b) => {
+      if (!sortField) return 0;
+      const aVal = a[sortField] || "";
+      const bVal = b[sortField] || "";
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [students, sortField, sortDir]);
 
   return (
     <>
@@ -1430,15 +1457,31 @@ export default function GuruPresensiPage() {
                   <table className="w-full">
                     <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-border/50">
-                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">NIS</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Nama</th>
+                        <th 
+                          className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                          onClick={() => handleSort("nis")}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            NIS
+                            <ArrowUpDown className={`h-3 w-3 ${sortField === "nis" ? "text-primary" : "opacity-40"}`} />
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                          onClick={() => handleSort("name")}
+                        >
+                          <div className="flex items-center justify-start gap-1">
+                            Nama
+                            <ArrowUpDown className={`h-3 w-3 ${sortField === "name" ? "text-primary" : "opacity-40"}`} />
+                          </div>
+                        </th>
                         <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Status</th>
                         <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Lokasi</th>
                         <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {students.map((student) => (
+                      {sortedStudents.map((student) => (
                         <StudentAttendanceRow
                           key={student.id}
                           student={student}

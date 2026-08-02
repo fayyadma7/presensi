@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDateLocal, formatDate, getSchoolDaysInRange } from "@/lib/helpers";
 import { fetchHolidays } from "@/lib/holidays";
-import { ArrowLeft, Download, Filter, FileBarChart, CalendarDays, ChevronDown, BarChart3, Calendar as CalendarIcon, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Filter, FileBarChart, CalendarDays, ChevronDown, BarChart3, Calendar as CalendarIcon, X, Loader2, ArrowUpDown } from "lucide-react";
 import { Skeleton, SkeletonCard, SkeletonTable } from "@/components/skeleton";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -145,6 +145,8 @@ export default function AdminPresensiSiswaPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showMonthForm, setShowMonthForm] = useState(false);
   const [holidays, setHolidays] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<"nis" | "name" | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [monthFrom, setMonthFrom] = useState(new Date().getMonth());
   const [yearFrom, setYearFrom] = useState(new Date().getFullYear());
   const [monthTo, setMonthTo] = useState(new Date().getMonth());
@@ -159,6 +161,28 @@ export default function AdminPresensiSiswaPage() {
     selectedClass === "all"
       ? "Semua Kelas"
       : classes.find((c) => c.id === selectedClass)?.name || "Semua Kelas";
+
+  function handleSort(field: "nis" | "name") {
+    if (sortField === field) {
+      if (sortDir === "asc") setSortDir("desc");
+      else {
+        setSortField(null);
+        setSortDir("asc");
+      }
+    } else {
+      setSortField(field);
+      setSortDir("asc");
+    }
+  }
+
+  const sortedRecapData = [...recapData].sort((a, b) => {
+    if (!sortField) return 0;
+    const aVal = a[sortField] || "";
+    const bVal = b[sortField] || "";
+    if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+    if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
 
   async function initPage() {
     const { data } = await supabase.from("classes").select("id, name").order("name");
@@ -841,11 +865,23 @@ export default function AdminPresensiSiswaPage() {
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap w-10">
                   No
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
-                  NIS
+                <th 
+                  className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                  onClick={() => handleSort("nis")}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    NIS
+                    <ArrowUpDown className={`h-3 w-3 ${sortField === "nis" ? "text-primary" : "opacity-40"}`} />
+                  </div>
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">
-                  Nama
+                <th 
+                  className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase cursor-pointer hover:bg-muted/50 transition-colors select-none"
+                  onClick={() => handleSort("name")}
+                >
+                  <div className="flex items-center justify-start gap-1">
+                    Nama
+                    <ArrowUpDown className={`h-3 w-3 ${sortField === "name" ? "text-primary" : "opacity-40"}`} />
+                  </div>
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">
                   Kelas
@@ -871,7 +907,7 @@ export default function AdminPresensiSiswaPage() {
               </tr>
             </thead>
             <tbody>
-              {recapData.map((r, i) => (
+              {sortedRecapData.map((r, i) => (
                 <tr
                   key={r.student_id}
                   className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150"
