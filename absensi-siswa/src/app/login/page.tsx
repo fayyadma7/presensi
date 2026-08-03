@@ -89,7 +89,7 @@ export default function LoginPage() {
         {/* Card Login - Claymorphism */}
         <div className="clay-card relative overflow-hidden p-8">
             {/* Logo & Title */}
-            <div className="text-center mb-8 relative z-10">
+            <div className="text-center mb-8">
               <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-3xl flex items-center justify-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] mb-4">
                 <School className="h-10 w-10 text-white" />
               </div>
@@ -102,7 +102,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5 relative z-10">
+            <form onSubmit={handleLogin} className="space-y-5">
               {error && (
                 <div className="clay-badge bg-destructive/10 text-destructive text-sm px-4 py-3 text-center font-medium">
                   {error}
@@ -151,7 +151,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="clay-button-accent w-full py-3.5 text-white font-bold text-base rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                className="relative z-10 clay-button-accent w-full py-3.5 text-white font-bold text-base rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
