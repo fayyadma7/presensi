@@ -134,6 +134,11 @@ export default function MonitoringCard() {
             {results.map((r) => {
               const masuk = resolveMasukStatus(r);
               const pulang = r.pulang_status;
+              const isAbsent =
+                masuk === "sakit" ||
+                masuk === "izin" ||
+                masuk === "alpa" ||
+                masuk === "dispen";
               return (
                 <div
                   key={r.nis}
@@ -151,17 +156,20 @@ export default function MonitoringCard() {
                         <LogIn className="h-3 w-3" />
                         {masuk ? statusLabel(masuk) : "Belum Masuk"}
                       </span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass(pulang)}`}>
-                        <LogOut className="h-3 w-3" />
-                        {pulang ? statusLabel(pulang) : "Belum Pulang"}
-                      </span>
+                      {!isAbsent && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass(pulang)}`}>
+                          <LogOut className="h-3 w-3" />
+                          {pulang ? statusLabel(pulang) : "Belum Pulang"}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {(r.masuk_time || r.pulang_time) && (
                     <p className="text-[11px] text-muted-foreground mt-1.5">
                       {r.masuk_time && (
                         <span>
-                          Masuk {formatTime(r.masuk_time)}
+                          {isAbsent ? "Waktu presensi: " : "Masuk "}
+                          {formatTime(r.masuk_time)}
                         </span>
                       )}
                       {r.masuk_time && r.pulang_time && <span> · </span>}

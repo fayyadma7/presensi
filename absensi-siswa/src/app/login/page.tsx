@@ -88,6 +88,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md px-4 py-8 flex-1 flex flex-col justify-center">
         {/* Card Login - Claymorphism */}
         <div className="clay-card relative overflow-hidden p-8">
+          <div className="relative z-10">
             {/* Logo & Title */}
             <div className="text-center mb-8">
               <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-3xl flex items-center justify-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] mb-4">
@@ -151,7 +152,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="relative z-10 clay-button-accent w-full py-3.5 text-white font-bold text-base rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                className="relative z-10 clay-button-accent w-full py-3.5 text-white font-bold text-base rounded-2xl disabled:opacity-100 disabled:saturate-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -163,8 +164,9 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+          </div>
           {/* Top Stacked Waves */}
-          <div className="absolute top-0 left-0 w-full h-[20%] min-h-[100px] pointer-events-none" style={{ transform: "rotate(180deg)" }}>
+          <div className="absolute top-0 left-0 w-full h-[20%] min-h-[100px] pointer-events-none z-0" style={{ transform: "rotate(180deg)" }}>
             <svg viewBox="0 0 1440 200" preserveAspectRatio="none" className="w-full h-full block">
               <path d="M0,200 L0,130 C360,95 720,155 1080,110 C1260,90 1440,120 1440,120 L1440,200 Z" fill="#C7D2FE" fillOpacity="0.07" />
               <path d="M0,200 L0,142 C200,112 460,162 720,128 C960,98 1240,145 1440,132 L1440,200 Z" fill="#A5B4FC" fillOpacity="0.06" />
@@ -174,7 +176,7 @@ export default function LoginPage() {
           </div>
 
           {/* Bottom Stacked Waves */}
-          <div className="absolute bottom-0 left-0 w-full h-[35%] min-h-[160px] pointer-events-none">
+          <div className="absolute bottom-0 left-0 w-full h-[35%] min-h-[160px] pointer-events-none z-0">
             <svg viewBox="0 0 1440 200" preserveAspectRatio="none" className="w-full h-full block">
               <path d="M0,200 L0,120 C480,80 960,140 1440,100 L1440,200 Z" fill="#C7D2FE" fillOpacity="0.08" />
               <path d="M0,200 L0,135 C240,100 540,155 840,115 C1020,95 1260,130 1440,120 L1440,200 Z" fill="#A5B4FC" fillOpacity="0.07" />
