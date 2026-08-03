@@ -1170,11 +1170,13 @@ export default function GuruPresensiPage() {
                     disabled={!hasCheckedIn || hasCheckedOut || markingPulang || timeDisabled}
                     title={timeDisabled ? timeDisabledReason : ""}
                     className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm ${
-                      !hasCheckedIn || hasCheckedOut || timeDisabled
-                        ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
-                        : markingPulang
-                          ? "bg-amber-300 text-white cursor-wait"
-                          : "bg-amber-100 text-amber-600 cursor-pointer"
+                      hasCheckedOut
+                        ? "bg-success/10 text-success cursor-not-allowed"
+                        : !hasCheckedIn || timeDisabled
+                          ? "bg-muted text-muted-foreground/50 cursor-not-allowed opacity-50"
+                          : markingPulang
+                            ? "bg-amber-300 text-white cursor-wait"
+                            : "bg-amber-100 text-amber-600 cursor-pointer"
                     }`}
                   >
                     {hasCheckedOut ? (
