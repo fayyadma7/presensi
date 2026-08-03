@@ -6,6 +6,7 @@ import { flushSync } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { School, Loader2, Eye, EyeOff } from "lucide-react";
 import PwaSplash from "@/components/PwaSplash";
+import MonitoringCard from "@/components/MonitoringCard";
 
 const LOGGED_OUT_KEY = "presensi:loggedOut";
 
@@ -79,15 +80,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ zIndex: 1 }}>
+    <div className="min-h-screen flex flex-col items-center relative" style={{ zIndex: 1 }}>
       {/* Background doodle pattern */}
       <div className="login-bg fixed inset-0 pointer-events-none" style={{ zIndex: 0 }} />
 
-      {/* Login Card - Claymorphism */}
-      <div className="w-full max-w-md relative z-10">
+      {/* Konten utama */}
+      <div className="relative z-10 w-full max-w-md px-4 py-8 flex-1 flex flex-col justify-center">
+        {/* Card Login - Claymorphism */}
         <div className="clay-card relative overflow-hidden p-8">
             {/* Logo & Title */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 relative z-10">
               <div className="mx-auto w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-3xl flex items-center justify-center shadow-[0_8px_24px_rgba(79,70,229,0.3)] mb-4">
                 <School className="h-10 w-10 text-white" />
               </div>
@@ -100,7 +102,7 @@ export default function LoginPage() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-5 relative z-10">
               {error && (
                 <div className="clay-badge bg-destructive/10 text-destructive text-sm px-4 py-3 text-center font-medium">
                   {error}
@@ -161,11 +163,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
-            {/* Footer */}
-            <p className="text-center text-xs text-muted-foreground mt-6">
-              &copy; {new Date().getFullYear()} <span className="font-bold">Fayyad Malik Abdillah</span>. All rights reserved.
-            </p>
           {/* Top Stacked Waves */}
           <div className="absolute top-0 left-0 w-full h-[20%] min-h-[100px] pointer-events-none" style={{ transform: "rotate(180deg)" }}>
             <svg viewBox="0 0 1440 200" preserveAspectRatio="none" className="w-full h-full block">
@@ -187,7 +184,20 @@ export default function LoginPage() {
             </svg>
           </div>
           </div>
-      </div>
+
+          {/* Card Monitoring Presensi untuk Orang Tua (terpisah dari card login) */}
+          <div className="mt-6">
+            <MonitoringCard />
+          </div>
+        </div>
+
+      {/* Footer / Hak Cipta */}
+      <footer className="w-full py-4 text-center text-xs text-foreground/40 border-t border-foreground/10 relative z-10">
+        <p>
+          &copy; {new Date().getFullYear()}{" "}
+          <span className="font-bold text-foreground/60">Fayyad Malik Abdillah</span>. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 }
