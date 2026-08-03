@@ -146,7 +146,7 @@ export default function MonitoringCard() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="font-bold text-sm text-foreground truncate">{r.name}</p>
+                      <p className="font-bold text-sm text-foreground line-clamp-2">{r.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {r.nis} {r.class_name ? `· ${r.class_name}` : ""}
                       </p>
