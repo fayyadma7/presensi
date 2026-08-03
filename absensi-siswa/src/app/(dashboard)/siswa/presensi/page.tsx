@@ -79,7 +79,7 @@ export default function SiswaPresensiPage() {
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
   const [todayRecord, setTodayRecord] = useState<TodayRecord | null>(null);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [gpsStatus, setGpsStatus] = useState<"checking" | "valid" | "invalid" | "unavailable" | "timeout" | "denied">("checking");
+  const [gpsStatus, setGpsStatus] = useState<"checking" | "valid" | "invalid" | "unavailable" | "timeout" | "denied" | "weak">("checking");
   const [cachedPosition, setCachedPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [holidays, setHolidays] = useState<string[]>([]);
   const [todayIsSchoolDay, setTodayIsSchoolDay] = useState<boolean>(true);
@@ -290,7 +290,7 @@ export default function SiswaPresensiPage() {
 
     // Block if GPS not available
     const gpsError = gpsStatus === "unavailable" ? "GPS belum aktif. Aktifkan GPS di perangkat Anda."
-      : gpsStatus === "timeout" ? "Sinyal GPS lemah. Coba di luar ruangan."
+      : (gpsStatus === "timeout" || gpsStatus === "weak") ? "Sinyal GPS lemah. Coba di luar ruangan."
       : gpsStatus === "denied" ? "Izinkan akses lokasi di pengaturan browser."
       : null;
     if (gpsError) {
@@ -579,7 +579,7 @@ export default function SiswaPresensiPage() {
                 )}
               </>
             )}
-            {gpsStatus === "timeout" && (
+            {(gpsStatus === "timeout" || gpsStatus === "weak") && (
               <>
                 <MapPinOff className="h-4 w-4 text-amber-600" />
                 <span className="text-amber-600 font-medium">Sinyal GPS lemah</span>
@@ -597,7 +597,7 @@ export default function SiswaPresensiPage() {
                 <span className="text-gray-500">GPS tidak tersedia</span>
               </>
             )}
-            {(gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" || (gpsStatus === "valid" && !geofenceValid)) && (
+            {(gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "weak" || gpsStatus === "denied" || (gpsStatus === "valid" && !geofenceValid)) && (
               <button
                 onClick={fetchGPS}
                 className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-bold hover:bg-indigo-100 transition-colors cursor-pointer"
@@ -607,11 +607,11 @@ export default function SiswaPresensiPage() {
               </button>
             )}
           </div>
-          {(gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable" || (gpsStatus === "valid" && !geofenceValid)) && (
+          {(gpsStatus === "timeout" || gpsStatus === "weak" || gpsStatus === "denied" || gpsStatus === "unavailable" || (gpsStatus === "valid" && !geofenceValid)) && (
             <p className="text-xs text-gray-500 mt-1 ml-6">
               {gpsStatus === "valid" && !geofenceValid
                 ? `Anda berada di luar area sekolah (radius ${settings?.geofence_radius || "100"}m)`
-                : getGPSErrorMessage(gpsStatus as "unavailable" | "timeout" | "denied")}
+                : getGPSErrorMessage(gpsStatus as "unavailable" | "timeout" | "denied" | "weak")}
             </p>
           )}
         </div>
@@ -675,14 +675,14 @@ export default function SiswaPresensiPage() {
             {isMasukTime && !todayRecord?.masuk_status && (
               <button
                 onClick={() => { setConfirmAction("masuk"); setNotes(""); }}
-                disabled={submitting || markingMasuk || gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" || !geofenceValid || timeDisabled}
-                title={timeDisabled ? timeDisabledReason : !geofenceValid ? "Anda di luar area sekolah" : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
+                disabled={submitting || markingMasuk || gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied" || !geofenceValid || timeDisabled}
+                title={timeDisabled ? timeDisabledReason : !geofenceValid ? "Anda di luar area sekolah" : gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm ${
                   submitting || markingMasuk
                     ? "bg-green-300 text-white cursor-wait"
                     : timeDisabled || !geofenceValid
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                      : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied"
+                      : gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied"
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                         : "bg-green-100 text-green-600 cursor-pointer"
                 }`}
@@ -723,14 +723,14 @@ export default function SiswaPresensiPage() {
             {!hasAnyAttendance && (
               <button
                 onClick={() => { setConfirmAction("sakit"); setNotes(""); }}
-                disabled={submitting || markingSakit || gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" || timeDisabled}
-                title={timeDisabled ? timeDisabledReason : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
+                disabled={submitting || markingSakit || gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied" || timeDisabled}
+                title={timeDisabled ? timeDisabledReason : gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm ${
                   submitting || markingSakit
                     ? "bg-blue-300 text-white cursor-wait"
                     : timeDisabled
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                      : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied"
+                      : gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied"
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                         : "bg-blue-100 text-blue-600 cursor-pointer"
                 }`}
@@ -748,14 +748,14 @@ export default function SiswaPresensiPage() {
             {!hasAnyAttendance && (
               <button
                 onClick={() => { setConfirmAction("izin"); setNotes(""); }}
-                disabled={submitting || markingIzin || gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" || timeDisabled}
-                title={timeDisabled ? timeDisabledReason : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
+                disabled={submitting || markingIzin || gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied" || timeDisabled}
+                title={timeDisabled ? timeDisabledReason : gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied" ? "Aktifkan GPS" : ""}
                 className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm ${
                   submitting || markingIzin
                     ? "bg-purple-300 text-white cursor-wait"
                     : timeDisabled
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
-                      : gpsStatus === "unavailable" || gpsStatus === "timeout" || gpsStatus === "denied"
+                      : gpsStatus === "unavailable" || (gpsStatus === "timeout" || gpsStatus === "weak") || gpsStatus === "denied"
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                         : "bg-purple-100 text-purple-600 cursor-pointer"
                 }`}
