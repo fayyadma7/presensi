@@ -139,6 +139,18 @@
   }
 }
 
+/* Login card waves - static background-image layers.
+   NOT DOM elements: no compositor layers, no transforms, cannot glitch
+   with the animating submit button. Clips to the card border-radius. */
+.login-card-waves {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L0,70 C360,105 720,45 1080,90 C1260,110 1440,80 1440,80 L1440,0 Z' fill='%23C7D2FE' fill-opacity='0.07'/%3E%3Cpath d='M0,0 L0,58 C200,88 460,38 720,72 C960,102 1240,55 1440,68 L1440,0 Z' fill='%23A5B4FC' fill-opacity='0.06'/%3E%3Cpath d='M0,0 L0,50 C300,80 600,35 900,65 C1100,88 1300,50 1440,58 L1440,0 Z' fill='%23818CF8' fill-opacity='0.06'/%3E%3Cpath d='M0,0 L0,42 C180,65 380,32 580,52 C780,72 1020,38 1440,50 L1440,0 Z' fill='%236366F1' fill-opacity='0.05'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200' preserveAspectRatio='none'%3E%3Cpath d='M0,200 L0,120 C480,80 960,140 1440,100 L1440,200 Z' fill='%23C7D2FE' fill-opacity='0.08'/%3E%3Cpath d='M0,200 L0,135 C240,100 540,155 840,115 C1020,95 1260,130 1440,120 L1440,200 Z' fill='%23A5B4FC' fill-opacity='0.07'/%3E%3Cpath d='M0,200 L0,140 C360,105 720,160 1080,115 C1260,95 1440,125 1440,125 L1440,200 Z' fill='%23818CF8' fill-opacity='0.07'/%3E%3Cpath d='M0,200 L0,148 C160,125 320,158 480,138 C640,118 800,155 960,135 C1120,115 1280,148 1440,140 L1440,200 Z' fill='%236366F1' fill-opacity='0.07'/%3E%3Cpath d='M0,200 L0,155 C200,130 440,165 680,142 C920,120 1200,158 1440,148 L1440,200 Z' fill='%234F46E5' fill-opacity='0.08'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: top center, bottom center;
+  background-size: 100% 110px, 100% 170px;
+}
+
 /* Clay pressed effect - for active/pressed buttons */
 .clay-pressed {
   box-shadow: 

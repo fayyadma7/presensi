@@ -87,7 +87,7 @@ export default function LoginPage() {
       {/* Konten utama */}
       <div className="relative z-10 w-full max-w-md px-4 py-8 flex-1 flex flex-col justify-center">
         {/* Card Login - Claymorphism */}
-        <div className="clay-card relative overflow-hidden isolate p-8">
+        <div className="clay-card relative overflow-hidden login-card-waves p-8">
           <div className="relative z-10">
             {/* Logo & Title */}
             <div className="text-center mb-8">
@@ -164,26 +164,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-          </div>
-          {/* Top Stacked Waves */}
-          <div className="absolute top-0 left-0 w-full h-[20%] min-h-[100px] pointer-events-none z-0" style={{ transform: "rotate(180deg)" }}>
-            <svg viewBox="0 0 1440 200" preserveAspectRatio="none" className="w-full h-full block">
-              <path d="M0,200 L0,130 C360,95 720,155 1080,110 C1260,90 1440,120 1440,120 L1440,200 Z" fill="#C7D2FE" fillOpacity="0.07" />
-              <path d="M0,200 L0,142 C200,112 460,162 720,128 C960,98 1240,145 1440,132 L1440,200 Z" fill="#A5B4FC" fillOpacity="0.06" />
-              <path d="M0,200 L0,150 C300,120 600,165 900,135 C1100,112 1300,150 1440,142 L1440,200 Z" fill="#818CF8" fillOpacity="0.06" />
-              <path d="M0,200 L0,158 C180,135 380,168 580,148 C780,128 1020,162 1440,150 L1440,200 Z" fill="#6366F1" fillOpacity="0.05" />
-            </svg>
-          </div>
-
-          {/* Bottom Stacked Waves */}
-          <div className="absolute bottom-0 left-0 w-full h-[35%] min-h-[160px] pointer-events-none z-0">
-            <svg viewBox="0 0 1440 200" preserveAspectRatio="none" className="w-full h-full block">
-              <path d="M0,200 L0,120 C480,80 960,140 1440,100 L1440,200 Z" fill="#C7D2FE" fillOpacity="0.08" />
-              <path d="M0,200 L0,135 C240,100 540,155 840,115 C1020,95 1260,130 1440,120 L1440,200 Z" fill="#A5B4FC" fillOpacity="0.07" />
-              <path d="M0,200 L0,140 C360,105 720,160 1080,115 C1260,95 1440,125 1440,125 L1440,200 Z" fill="#818CF8" fillOpacity="0.07" />
-              <path d="M0,200 L0,148 C160,125 320,158 480,138 C640,118 800,155 960,135 C1120,115 1280,148 1440,140 L1440,200 Z" fill="#6366F1" fillOpacity="0.07" />
-              <path d="M0,200 L0,155 C200,130 440,165 680,142 C920,120 1200,158 1440,148 L1440,200 Z" fill="#4F46E5" fillOpacity="0.08" />
-            </svg>
           </div>
           </div>
 
