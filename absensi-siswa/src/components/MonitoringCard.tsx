@@ -144,14 +144,14 @@ export default function MonitoringCard() {
                   key={r.nis}
                   className="p-3 rounded-2xl bg-muted/40 border border-border/50"
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-foreground line-clamp-2">{r.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {r.nis} {r.class_name ? `· ${r.class_name}` : ""}
                       </p>
                     </div>
-                    <div className="flex gap-1.5 shrink-0 items-center">
+                    <div className="flex gap-1.5 shrink-0 items-start">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass(masuk)}`}>
                         <LogIn className="h-3 w-3" />
                         {masuk ? statusLabel(masuk) : "Belum Masuk"}
