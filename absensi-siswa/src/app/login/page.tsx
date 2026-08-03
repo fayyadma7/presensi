@@ -87,7 +87,7 @@ export default function LoginPage() {
       {/* Konten utama */}
       <div className="relative z-10 w-full max-w-md px-4 py-8 flex-1 flex flex-col justify-center">
         {/* Card Login - Claymorphism */}
-        <div className="clay-card relative overflow-hidden p-8">
+        <div className="clay-card relative overflow-hidden isolate p-8">
           <div className="relative z-10">
             {/* Logo & Title */}
             <div className="text-center mb-8">
@@ -152,7 +152,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="relative z-10 clay-button-accent w-full py-3.5 text-white font-bold text-base rounded-2xl disabled:opacity-100 disabled:saturate-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                className="relative z-10 clay-button-accent w-full py-3.5 text-white font-bold text-base rounded-2xl disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
