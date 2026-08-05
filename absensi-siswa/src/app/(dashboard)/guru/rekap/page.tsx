@@ -24,6 +24,7 @@ interface RecapData {
   izin: number;
   dispen: number;
   alpa: number;
+  hasRecord: boolean;
   hasLocation: number;
   lastLat: number | null;
   lastLng: number | null;
@@ -109,6 +110,7 @@ export default function RekapPage() {
     formatDateLocal(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
   );
   const [endDate, setEndDate] = useState(() => formatDateLocal());
+  const [statusFilter, setStatusFilter] = useState<"all" | "hadir" | "terlambat" | "sakit" | "izin" | "dispen" | "alpa" | "belum_hadir">("all");
   const [recapData, setRecapData] = useState<RecapData[]>([]);
   const [holidays, setHolidays] = useState<string[]>([]);
 
@@ -124,6 +126,19 @@ export default function RekapPage() {
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const selectedClassName = selectedClass === "all" ? "Semua Kelas" : classes.find((c) => c.id === selectedClass)?.name || "Semua Kelas";
+
+  const filteredRecapData = recapData.filter((r) => {
+    switch (statusFilter) {
+      case "hadir": return r.hadir > 0 && r.terlambat === 0;
+      case "terlambat": return r.terlambat > 0;
+      case "sakit": return r.sakit > 0;
+      case "izin": return r.izin > 0;
+      case "dispen": return r.dispen > 0;
+      case "alpa": return r.alpa > 0;
+      case "belum_hadir": return !r.hasRecord;
+      default: return true;
+    }
+  });
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -204,7 +219,7 @@ export default function RekapPage() {
       if (!resolvedClass && s.class_id && classIdMap[s.class_id]) {
         resolvedClass = classIdMap[s.class_id];
       }
-      return { student_id: s.id, nis: s.nis, name: s.name, className: resolvedClass, ...counts, hasLocation: locationMap[s.id] || 0, lastLat: lastLocationMap[s.id]?.lat || null, lastLng: lastLocationMap[s.id]?.lng || null };
+      return { student_id: s.id, nis: s.nis, name: s.name, className: resolvedClass, ...counts, hasRecord: (attData || []).some((a: StudentAttendanceRecord) => a.student_id === s.id), hasLocation: locationMap[s.id] || 0, lastLat: lastLocationMap[s.id]?.lat || null, lastLng: lastLocationMap[s.id]?.lng || null };
     });
     setRecapData(recap);
     setLoading(false);
@@ -310,7 +325,19 @@ export default function RekapPage() {
     setExporting(true);
     setShowExportMenu(false);
     try {
-      const studentIds = recapData.map((r) => r.student_id);
+      const filteredRecap = recapData.filter((r) => {
+        switch (statusFilter) {
+          case "hadir": return r.hadir > 0 && r.terlambat === 0;
+          case "terlambat": return r.terlambat > 0;
+          case "sakit": return r.sakit > 0;
+          case "izin": return r.izin > 0;
+          case "dispen": return r.dispen > 0;
+          case "alpa": return r.alpa > 0;
+          case "belum_hadir": return !r.hasRecord;
+          default: return true;
+        }
+      });
+      const studentIds = filteredRecap.map((r) => r.student_id);
       if (studentIds.length === 0) { setExporting(false); return; }
 
       const { data: attDetail } = await supabase
@@ -329,7 +356,7 @@ export default function RekapPage() {
 
       // Map presence days per student
       const presentDaysMap: Record<string, Set<string>> = {};
-      recapData.forEach(r => { presentDaysMap[r.student_id] = new Set(); });
+      filteredRecap.forEach(r => { presentDaysMap[r.student_id] = new Set(); });
 
       attDetail?.forEach((a: AttendanceDetail & { late_status?: string | null }) => {
         if (!countMap[a.student_id]) countMap[a.student_id] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
@@ -357,7 +384,7 @@ export default function RekapPage() {
       });
 
       // Add "Alpa (Tanpa Keterangan)" for school days where the student was not present
-      recapData.forEach(r => {
+      filteredRecap.forEach(r => {
         const pDays = presentDaysMap[r.student_id];
         schoolDaysArr.forEach(sd => {
           if (!pDays || !pDays.has(sd)) {
@@ -380,7 +407,7 @@ export default function RekapPage() {
         }
       });
 
-      const rows = recapData.map((r, i) => {
+      const rows = filteredRecap.map((r, i) => {
         const counts = countMap[r.student_id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         const studentRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id);
         const computedAlpa = getStudentAlpaCount(studentRecords, startDate, endDate, holidays);
@@ -539,7 +566,7 @@ export default function RekapPage() {
         const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
         const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
 
-        const rows = recapData.map((r, i) => {
+      const rows = recapData.map((r, i) => {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd);
           const computedAlpa = getStudentAlpaCount(monthRecords, mStart, mEnd, holidays);
@@ -698,6 +725,23 @@ export default function RekapPage() {
             <label className="text-xs font-bold text-muted-foreground block mb-1">Sampai Tanggal</label>
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="clay-input px-4 py-2 rounded-xl outline-none" />
           </div>
+          <div className="space-y-3">
+            <label className="text-xs font-bold text-muted-foreground block mb-1">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+              className="clay-input h-10 px-4 rounded-xl outline-none cursor-pointer"
+            >
+              <option value="all">Semua Status</option>
+              <option value="hadir">Hadir</option>
+              <option value="terlambat">Terlambat</option>
+              <option value="sakit">Sakit</option>
+              <option value="izin">Izin</option>
+              <option value="dispen">Dispen</option>
+              <option value="alpa">Alpa</option>
+              <option value="belum_hadir">Belum Hadir</option>
+            </select>
+          </div>
         </div>
 
         {/* Export Dropdown */}
@@ -775,7 +819,7 @@ export default function RekapPage() {
               </tr>
             </thead>
             <tbody>
-              {recapData.map((r) => (
+              {filteredRecapData.map((r) => (
                 <tr key={r.student_id} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150">
                   <td className="px-4 py-3 font-mono text-center text-sm whitespace-nowrap">{r.nis}</td>
                   <td className="px-4 py-3 font-medium text-left">{r.name}</td>
@@ -788,8 +832,8 @@ export default function RekapPage() {
                   <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge("alpa", r.alpa)}</td>
                 </tr>
               ))}
-              {recapData.length === 0 && (
-                <tr><td colSpan={9} className="text-center py-8 text-muted-foreground">Tidak ada data untuk rentang tanggal ini</td></tr>
+              {filteredRecapData.length === 0 && (
+                <tr><td colSpan={9} className="text-center py-8 text-muted-foreground">Tidak ada data untuk rentang tanggal dan status ini</td></tr>
               )}
             </tbody>
           </table>

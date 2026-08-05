@@ -30,6 +30,7 @@ interface RecapData {
   izin: number;
   dispen: number;
   alpa: number;
+  hasRecord: boolean;
 }
 
 type StudentAttendanceRecord = {
@@ -147,6 +148,7 @@ export default function AdminPresensiSiswaPage() {
   const [holidays, setHolidays] = useState<string[]>([]);
   const [sortField, setSortField] = useState<"nis" | "name" | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [statusFilter, setStatusFilter] = useState<"all" | "hadir" | "terlambat" | "sakit" | "izin" | "dispen" | "alpa" | "belum_hadir">("all");
   const [monthFrom, setMonthFrom] = useState(new Date().getMonth());
   const [yearFrom, setYearFrom] = useState(new Date().getFullYear());
   const [monthTo, setMonthTo] = useState(new Date().getMonth());
@@ -182,6 +184,19 @@ export default function AdminPresensiSiswaPage() {
     if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
     if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
     return 0;
+  });
+
+  const filteredRecapData = sortedRecapData.filter((r) => {
+    switch (statusFilter) {
+      case "hadir": return r.hadir > 0 && r.terlambat === 0;
+      case "terlambat": return r.terlambat > 0;
+      case "sakit": return r.sakit > 0;
+      case "izin": return r.izin > 0;
+      case "dispen": return r.dispen > 0;
+      case "alpa": return r.alpa > 0;
+      case "belum_hadir": return !r.hasRecord;
+      default: return true;
+    }
   });
 
   async function initPage() {
@@ -286,6 +301,7 @@ export default function AdminPresensiSiswaPage() {
           className: resolvedClass,
           ...counts,
           alpa: calculatedAlpa,
+          hasRecord: (attData || []).some((a: StudentAttendanceRecord) => a.student_id === s.id),
         };
       }
     );
@@ -401,7 +417,19 @@ export default function AdminPresensiSiswaPage() {
     setExporting(true);
     setShowExportMenu(false);
     try {
-      const studentIds = recapData.map((r) => r.student_id);
+      const filteredRecap = recapData.filter((r) => {
+        switch (statusFilter) {
+          case "hadir": return r.hadir > 0 && r.terlambat === 0;
+          case "terlambat": return r.terlambat > 0;
+          case "sakit": return r.sakit > 0;
+          case "izin": return r.izin > 0;
+          case "dispen": return r.dispen > 0;
+          case "alpa": return r.alpa > 0;
+          case "belum_hadir": return !r.hasRecord;
+          default: return true;
+        }
+      });
+      const studentIds = filteredRecap.map((r) => r.student_id);
       if (studentIds.length === 0) { setExporting(false); return; }
 
       const { data: attDetail } = await supabase
@@ -419,7 +447,7 @@ export default function AdminPresensiSiswaPage() {
       const schoolDaysArr = getCompletedSchoolDays(startDate, endDate, holidays);
       
       const presentDaysMap: Record<string, Set<string>> = {};
-      recapData.forEach(r => { presentDaysMap[r.student_id] = new Set(); });
+      filteredRecap.forEach(r => { presentDaysMap[r.student_id] = new Set(); });
 
       attDetail?.forEach((a: { student_id: string; date: string; masuk_status: string | null; late_status: string | null; notes: string | null }) => {
         if (!countMap[a.student_id]) countMap[a.student_id] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
@@ -447,7 +475,7 @@ export default function AdminPresensiSiswaPage() {
       });
 
       // Add "Alpa (Tanpa Keterangan)" for school days where the student was not present
-      recapData.forEach(r => {
+      filteredRecap.forEach(r => {
         const pDays = presentDaysMap[r.student_id];
         schoolDaysArr.forEach(sd => {
           if (!pDays || !pDays.has(sd)) {
@@ -470,7 +498,7 @@ export default function AdminPresensiSiswaPage() {
 
       // Logika pemanggilan subject_attendances telah dihapus sesuai permintaan
 
-      const rows = recapData.map((r, i) => {
+      const rows = filteredRecap.map((r, i) => {
         const counts = countMap[r.student_id] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
         const studentRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id);
         const computedAlpa = getStudentAlpaCount(studentRecords, startDate, endDate, holidays);
@@ -609,7 +637,7 @@ export default function AdminPresensiSiswaPage() {
       const wb = XLSX.utils.book_new();
 
       for (const mk of monthKeys) {
-        const rows = recapData.map((r, i) => {
+      const rows = recapData.map((r, i) => {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
           const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
@@ -791,6 +819,37 @@ export default function AdminPresensiSiswaPage() {
               className="clay-input px-4 py-2 rounded-xl outline-none"
             />
           </div>
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold text-muted-foreground">
+              Status
+            </label>
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => setStatusFilter(String(v || "all") as typeof statusFilter)}
+            >
+              <SelectTrigger className="cursor-pointer clay-input h-10 px-4 rounded-xl border-0">
+                <span>
+                  {statusFilter === "all" ? "Semua Status" :
+                    statusFilter === "hadir" ? "Hadir" :
+                    statusFilter === "terlambat" ? "Terlambat" :
+                    statusFilter === "sakit" ? "Sakit" :
+                    statusFilter === "izin" ? "Izin" :
+                    statusFilter === "dispen" ? "Dispen" :
+                    statusFilter === "alpa" ? "Alpa" : "Belum Hadir"}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="cursor-pointer">Semua Status</SelectItem>
+                <SelectItem value="hadir" className="cursor-pointer">Hadir</SelectItem>
+                <SelectItem value="terlambat" className="cursor-pointer">Terlambat</SelectItem>
+                <SelectItem value="sakit" className="cursor-pointer">Sakit</SelectItem>
+                <SelectItem value="izin" className="cursor-pointer">Izin</SelectItem>
+                <SelectItem value="dispen" className="cursor-pointer">Dispen</SelectItem>
+                <SelectItem value="alpa" className="cursor-pointer">Alpa</SelectItem>
+                <SelectItem value="belum_hadir" className="cursor-pointer">Belum Hadir</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Export Buttons */}
@@ -907,7 +966,7 @@ export default function AdminPresensiSiswaPage() {
               </tr>
             </thead>
             <tbody>
-              {sortedRecapData.map((r, i) => (
+              {filteredRecapData.map((r, i) => (
                 <tr
                   key={r.student_id}
                   className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors duration-150"
@@ -940,13 +999,13 @@ export default function AdminPresensiSiswaPage() {
                   </td>
                 </tr>
               ))}
-              {recapData.length === 0 && (
+              {filteredRecapData.length === 0 && (
                 <tr>
                   <td
                     colSpan={10}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    Tidak ada data untuk rentang tanggal ini
+                    Tidak ada data untuk rentang tanggal dan status ini
                   </td>
                 </tr>
               )}
