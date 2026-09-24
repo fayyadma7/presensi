@@ -319,6 +319,10 @@ const LiveClock = memo(function LiveClock() {
   );
 });
 
+// Matikan realtime SEMENTARA (hemat kuota concurrent; ubah ke false untuk nyalakan lagi).
+// Dashboard tetap update via fetch manual (ganti filter/pindah tab/buka ulang).
+const NONAKTIF_REALTIME_SEMENTARA = true;
+
 export default function DashboardPage() {
   const SIMULASI_MODE = false;
   const SIMULASI_DATE = "2026-07-19";
@@ -692,6 +696,7 @@ const closeScanner = () => {
 
   // Real-time subscription for attendance changes
   useEffect(() => {
+    if (NONAKTIF_REALTIME_SEMENTARA) return;
     const today = formatDateLocal();
     const channel = supabase
       .channel("dashboard-attendance")
@@ -716,6 +721,7 @@ const closeScanner = () => {
 
   // Real-time subscription for teacher_subject_attendances (Pantau Guru)
   useEffect(() => {
+    if (NONAKTIF_REALTIME_SEMENTARA) return;
     if (userRole !== "admin") return;
     const channel = supabase
       .channel("dashboard-subject-attendance")
@@ -728,6 +734,7 @@ const closeScanner = () => {
 
   // Real-time subscription for teacher_attendance (Kehadiran Harian Guru)
   useEffect(() => {
+    if (NONAKTIF_REALTIME_SEMENTARA) return;
     if (userRole !== "admin") return;
     const today = SIMULASI_MODE ? SIMULASI_DATE : formatDateLocal();
     const channel = supabase
