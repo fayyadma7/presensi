@@ -465,9 +465,18 @@ export default function RekapPage() {
       const studentIds = recapData.map((r) => r.student_id);
       if (studentIds.length === 0) { setExporting(false); return; }
 
-      // Calculate date range
-      const rangeStart = formatDateLocal(new Date(startYear, startMonth, 1));
-      const rangeEnd = formatDateLocal(new Date(endYear, endMonth + 1, 0));
+      // Calculate date range, dipotong ke filter tanggal tabel agar misal
+      // filter 27 Juli tidak ikut mengekspor 1-26 Juli.
+      const monthRangeStart = formatDateLocal(new Date(startYear, startMonth, 1));
+      const monthRangeEnd = formatDateLocal(new Date(endYear, endMonth + 1, 0));
+      const rangeStart = monthRangeStart > startDate ? monthRangeStart : startDate;
+      const rangeEnd = monthRangeEnd < endDate ? monthRangeEnd : endDate;
+
+      if (rangeStart > rangeEnd) {
+        toast.error("Rentang bulan tidak beririsan dengan filter tanggal.");
+        setExporting(false);
+        return;
+      }
 
       const { data: attDetail } = await supabase
         .from("attendance")
@@ -483,8 +492,9 @@ export default function RekapPage() {
       const monthPresentDays: Record<string, Record<string, Set<string>>> = {};
 
       attDetail?.forEach((a: AttendanceDetail & { late_status?: string | null }) => {
-        const d = new Date(a.date);
-        const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+        if (a.date < startDate || a.date > endDate) return;
+        const [yStr, mStr] = a.date.split("-");
+        const mKey = `${Number(yStr)}-${Number(mStr) - 1}`;
         const sId = a.student_id;
 
         if (!monthCounts[sId]) monthCounts[sId] = {};
@@ -525,12 +535,14 @@ export default function RekapPage() {
         }
       }
 
-      // Pre-compute school days per month for alpa calculation and auto notes
+      // Pre-compute school days per month, dipotong ke filter tanggal.
       const monthSchoolDaysArrMap: Record<string, string[]> = {};
       for (const mk of monthKeys) {
         const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
         const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
-        const arr = getCompletedSchoolDays(mStart, mEnd, holidays);
+        const effStart = mStart > startDate ? mStart : startDate;
+        const effEnd = mEnd < endDate ? mEnd : endDate;
+        const arr = effStart > effEnd ? [] : getCompletedSchoolDays(effStart, effEnd, holidays);
         monthSchoolDaysArrMap[mk.key] = arr;
       }
 
@@ -563,13 +575,14 @@ export default function RekapPage() {
 
       // === SHEETS PER BULAN ===
       for (const mk of monthKeys) {
-        const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
-        const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
-
       const rows = recapData.map((r, i) => {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
-          const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd);
-          const computedAlpa = getStudentAlpaCount(monthRecords, mStart, mEnd, holidays);
+          const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
+          const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
+          const effStart = mStart > startDate ? mStart : startDate;
+          const effEnd = mEnd < endDate ? mEnd : endDate;
+          const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= effStart && a.date <= effEnd);
+          const computedAlpa = effStart > effEnd ? 0 : getStudentAlpaCount(monthRecords, effStart, effEnd, holidays);
           const notes = (monthNotes[r.student_id]?.[mk.key] || []).join("\n") || "-";
           return {
             No: i + 1,
@@ -648,8 +661,10 @@ export default function RekapPage() {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
           const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
-          const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd);
-          const computedAlpa = getStudentAlpaCount(monthRecords, mStart, mEnd, holidays);
+          const effStart = mStart > startDate ? mStart : startDate;
+          const effEnd = mEnd < endDate ? mEnd : endDate;
+          const monthRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => a.student_id === r.student_id && a.date >= effStart && a.date <= effEnd);
+          const computedAlpa = effStart > effEnd ? 0 : getStudentAlpaCount(monthRecords, effStart, effEnd, holidays);
           row.push(counts.hadir, counts.terlambat, counts.sakit, counts.izin, counts.dispen, computedAlpa);
         });
         return row;

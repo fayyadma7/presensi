@@ -541,8 +541,19 @@ export default function AdminPresensiSiswaPage() {
       const studentIds = recapData.map((r) => r.student_id);
       if (studentIds.length === 0) { setExporting(false); return; }
 
-      const rangeStart = formatDateLocal(new Date(yearFrom, monthFrom, 1));
-      const rangeEnd = formatDateLocal(new Date(yearTo, monthTo + 1, 0));
+      const monthRangeStart = formatDateLocal(new Date(yearFrom, monthFrom, 1));
+      const monthRangeEnd = formatDateLocal(new Date(yearTo, monthTo + 1, 0));
+
+      // Potong rentang bulanan dengan filter tanggal tabel agar misal
+      // filter 27 Juli tidak ikut mengekspor 1-26 Juli.
+      const rangeStart = monthRangeStart > startDate ? monthRangeStart : startDate;
+      const rangeEnd = monthRangeEnd < endDate ? monthRangeEnd : endDate;
+
+      if (rangeStart > rangeEnd) {
+        toast.error("Rentang bulan tidak beririsan dengan filter tanggal.");
+        setExporting(false);
+        return;
+      }
 
       const { data: attDetail } = await supabase
         .from("attendance")
@@ -557,8 +568,11 @@ export default function AdminPresensiSiswaPage() {
       const monthPresentDays: Record<string, Record<string, Set<string>>> = {};
 
       attDetail?.forEach((a: { student_id: string; date: string; masuk_status: string | null; late_status: string | null; notes: string | null }) => {
-        const d = new Date(a.date);
-        const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+        // attDetail sudah dipotong ke irisan filter, tapi saring lagi per tanggal
+        // agar aman dari month-bucketing yang salah.
+        if (a.date < startDate || a.date > endDate) return;
+        const [yStr, mStr] = a.date.split("-");
+        const mKey = `${Number(yStr)}-${Number(mStr) - 1}`;
         const sId = a.student_id;
         if (!monthCounts[sId]) monthCounts[sId] = {};
         if (!monthCounts[sId][mKey]) monthCounts[sId][mKey] = { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
@@ -598,12 +612,15 @@ export default function AdminPresensiSiswaPage() {
         }
       }
 
-      // Pre-compute school days per month for alpa calculation and auto notes
+      // Pre-compute school days per month for alpa calculation and auto notes.
+      // Dipotong ke filter tanggal agar 1-26 Juli tidak ikut dihitung saat filter 27 Juli.
       const monthSchoolDaysArrMap: Record<string, string[]> = {};
       for (const mk of monthKeys) {
         const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
         const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
-        const arr = getCompletedSchoolDays(mStart, mEnd, holidays);
+        const effStart = mStart > startDate ? mStart : startDate;
+        const effEnd = mEnd < endDate ? mEnd : endDate;
+        const arr = effStart > effEnd ? [] : getCompletedSchoolDays(effStart, effEnd, holidays);
         monthSchoolDaysArrMap[mk.key] = arr;
       }
 
@@ -641,10 +658,12 @@ export default function AdminPresensiSiswaPage() {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
           const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
+          const effStart = mStart > startDate ? mStart : startDate;
+          const effEnd = mEnd < endDate ? mEnd : endDate;
           const studentRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => (
-            a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd
+            a.student_id === r.student_id && a.date >= effStart && a.date <= effEnd
           ));
-          const ca = getStudentAlpaCount(studentRecords, mStart, mEnd, holidays);
+          const ca = effStart > effEnd ? 0 : getStudentAlpaCount(studentRecords, effStart, effEnd, holidays);
           const notes = (monthNotes[r.student_id]?.[mk.key] || []).join("\n") || "-";
           return {
             No: i + 1, NIS: r.nis, Nama: r.name, Kelas: r.className,
@@ -700,10 +719,12 @@ export default function AdminPresensiSiswaPage() {
           const counts = monthCounts[r.student_id]?.[mk.key] || { hadir: 0, terlambat: 0, sakit: 0, izin: 0, dispen: 0, alpa: 0 };
           const mStart = formatDateLocal(new Date(mk.year, mk.month, 1));
           const mEnd = formatDateLocal(new Date(mk.year, mk.month + 1, 0));
+          const effStart = mStart > startDate ? mStart : startDate;
+          const effEnd = mEnd < endDate ? mEnd : endDate;
           const studentRecords = (attDetail || []).filter((a: StudentAttendanceRecord) => (
-            a.student_id === r.student_id && a.date >= mStart && a.date <= mEnd
+            a.student_id === r.student_id && a.date >= effStart && a.date <= effEnd
           ));
-          const ca = getStudentAlpaCount(studentRecords, mStart, mEnd, holidays);
+          const ca = effStart > effEnd ? 0 : getStudentAlpaCount(studentRecords, effStart, effEnd, holidays);
           row.push(counts.hadir, counts.terlambat, counts.sakit, counts.izin, counts.dispen, ca);
         });
         return row;
